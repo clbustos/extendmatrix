@@ -54,7 +54,7 @@ class Matrix
 		when Range 
 			case j
 			when Range
-				Matrix[*i.collect{|l| self.row(l)[j]}
+				Matrix[*i.collect{|l| self.row(l)[j].to_a}]
 			else
 				column(j)[i]	
 			end
@@ -63,7 +63,7 @@ class Matrix
 			when Range
 				row(i)[j]
 			else
-				self[i, j]
+				ids(i, j)
 			end
 		end		
 	end
