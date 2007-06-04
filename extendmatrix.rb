@@ -73,17 +73,6 @@ class Vector
 		map {|e| e / c}
 	end
 
-	alias :star :*
-	
-	def *(c)
-		case c
-		when Numeric
-			map {|e| e * c}
-		else
-			star(c)
-		end
-	end
-
 	def transpose
 		Matrix[self.to_a]
 	end
