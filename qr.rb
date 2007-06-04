@@ -88,16 +88,15 @@ class Matrix
 	end	
 
 	def QR
-		m = row_size
-		n = column_size
-		print "#{m} #{n}"
+		m = row_size - 1
+		n = column_size - 1
+		print "m:#{m} n:#{n} \n"
 		m.times{|j|
 			v, beta = slice(j..m, j).house
 			p v
-			p beta
-			p m-j
-			slice=(Matrix.I(m-j) - beta * (v * v.t)) * slice(j..m, j..n) , j..m, j..n
-			slice= v.slice(2..(m-j+1)), j+1..m, j if j < m
+			p  v[2..(m-j+1)]
+			self[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * self[j..m, j..n]
+			self[(j+1)..m,j] = v[2..(m-j+1)] if j < m
 		}
 	end
 end
