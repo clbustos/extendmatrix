@@ -80,8 +80,7 @@ class Vector
 	alias :t :transpose
 	
 	def house
-		n = length
-		s = slice(1, n)
+		s = self[1..length-1]
 		sigma = s.inner_product(s)
 		v = clone; v[0] = 1
 		if sigma == 0
@@ -95,7 +94,7 @@ class Vector
 			end
 			v2 = v[0] ** 2
 			beta = 2 * v2 / (sigma + v2)
-			v /= v[1]
+			v /= v[0]
 		end
 		return v, beta
 	end
@@ -222,15 +221,18 @@ class Matrix
 	alias :column_collect! :column!
 
 	def column=(args)
-		v = args[1] #the new value vector
+		c = args[0] # the column to be change
+		v = args[1] #the values vector
+
 	  case args.size
-		when 3 then range = args[2]
-		when 4 then range = args[2]..args[3]
-		else range = 0...row_size
+		when 3 then r = args[2] # the range 2..4
+		when 4 then r = args[2]..args[3] #the range by borders
+		else r = 0...row_size
 		end
-		(self.row_size..range.begin - 1).each{|e| self[e, args[0]] = 0}
-		[v.size, range.entries.size].min.times{|e| self[e + range.begin, args[0]] = v[e]}
-		((v.size + range.begin)..range.end).each {|e| self[e, args[0]] = 0}
+		#r.each{|e| self[e, c] = v[e - r.begin]}
+		(self.row_size..r.begin - 1).each{|e| self[e, c] = 0}
+		[v.size, r.entries.size].min.times{|e| self[e + r.begin, c] = v[e]}
+		((v.size + r.begin)..r.end).each {|e| self[e, c] = 0}
 	end
 	
 	def row=(args)

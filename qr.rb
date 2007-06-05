@@ -13,9 +13,12 @@ class Vector
 	def []=(i, v)
 		case i
 		when Range
+			i.each{|e| self[e] = v[e - i.begin]}
+=begin
 				(self.size..i.begin - 1).each{|e| self[e] = 0} # self.size must be in the first place because the size of self can be modified 
 				[v.size, i.entries.size].min.times {|e| self[e + i.begin] = v[e]}
 				(v.size + i.begin .. i.end).each {|e| self[e] = 0}
+=end
 		else
 			@elements[i]=v 
 		end
@@ -96,9 +99,10 @@ class Matrix
 		m = row_size - 1
 		n = column_size - 1
 		print "m:#{m} n:#{n} \n"
-		m.times{|j|
+		(m+1).times{|j|
 			v, beta = self[j..m, j].house
 			p v
+			print v * v.t
 			self[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * self[j..m, j..n]
 			self[(j+1)..m,j] = v[2..(m-j+1)] if j < m
 		}
