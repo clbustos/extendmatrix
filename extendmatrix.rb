@@ -222,12 +222,15 @@ class Matrix
 	alias :column_collect! :column!
 
 	def column=(args)
-		case args.size
+		v = args[1] #the new value vector
+	  case args.size
 		when 3 then range = args[2]
 		when 4 then range = args[2]..args[3]
 		else range = 0...row_size
 		end
-		range.each{|i| @rows[i][args[0]] = args[1][i]}
+		(self.row_size..range.begin - 1).each{|e| self[e, args[0]] = 0}
+		[v.size, range.entries.size].min.times{|e| self[e + range.begin, args[0]] = v[e]}
+		((v.size + range.begin)..range.end).each {|e| self[e, args[0]] = 0}
 	end
 	
 	def row=(args)
@@ -236,7 +239,7 @@ class Matrix
 		when 4 then range = args[2]..args[3]
 		else range = 0...column_size
 		end
-		row!(args[0]).slice=args[1], range
+		row!(args[0])[range]=args[1]
 	end
 
 	def norm(p = 2)
