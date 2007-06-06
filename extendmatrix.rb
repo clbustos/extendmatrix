@@ -17,12 +17,28 @@ class Vector
 	end
 
 	alias :length :size
-
-=begin
-	def []=(i, v)
-    		@elements[i] = v
+	alias :index :[]
+	def [](i)
+		case i
+		when Range
+			Vector[*to_a.slice(i)]
+		else
+			index(i)
+		end	
 	end
-=end
+
+	def []=(i, v)
+		case i
+		when Range
+			#i.each{|e| self[e] = v[e - i.begin]}
+			(self.size..i.begin - 1).each{|e| self[e] = 0} # self.size must be in the first place because the size of self can be modified 
+			[v.size, i.entries.size].min.times {|e| self[e + i.begin] = v[e]}
+			(v.size + i.begin .. i.end).each {|e| self[e] = 0}
+		else
+			@elements[i]=v 
+		end
+	end
+
 
 	def collect! 
 		els = @elements.collect! {|v| yield(v)}
@@ -118,11 +134,56 @@ class Matrix
 		self.send(init_method, *argv)
 	end
 
-=begin
-	def []=(i, j, v)
-		@rows[i][j] = v
+	alias :ids :[]
+	def [](i, j)
+		case i
+		when Range 
+			case j
+			when Range
+				Matrix[*i.collect{|l| self.row(l)[j].to_a}]
+			else
+				column(j)[i]	
+			end
+		else
+			case j
+			when Range
+				row(i)[j]
+			else
+				ids(i, j)
+			end
+		end		
 	end
-=end
+
+	def []=(i, j, v)
+		case i
+		when Range
+			if i.entries.size == 1
+				self[i.begin, j] = (v.is_a?(Matrix) ? v.row(0) : v)
+			else
+				case j
+				when Range
+					if j.entries.size == 1
+						self[i, j.begin] = (v.is_a?(Matrix) ? v.column(0) : v)
+					else
+						i.each{|l| self.row= l, v.row(l - i.begin), j}
+					end
+				else
+					self.column= j, v, i	
+				end
+			end
+		else
+			case j
+			when Range
+				if j.entries.size == 1
+					self[i, j.begin] = (v.is_a?(Vector) ? v[0] : v)
+				else
+					self.row= i, v, j
+				end
+			else
+				@rows[i][j] = v
+			end
+		end		
+	end	
 
 	def clone
 		super
@@ -132,6 +193,27 @@ class Matrix
 		init_rows(orig.rows, true)
 		self.wrap=(orig.wrap)
 	end
+
+
+	class << self
+		def diag(*args)
+			p args
+			dsize = 0
+			sizes = args.collect{|e| x = (e.is_a?(Matrix)) ? e.row_size : 1; dsize += x; x}
+			p sizes
+			m = Matrix.zero(dsize)
+			count = 0
+
+			sizes.size.times{|i| 
+				range = count..(count+sizes[i]-1)
+				p range
+				m[range, range] = args[i]
+				count += sizes[i]
+			}
+			m
+		end
+	end
+
 
 	def set(m)
 		0.upto(m.row_size - 1) do |i|
@@ -319,5 +401,27 @@ class Matrix
 		l = trans[0].inv
 		(1...trans.size).each{|i| p trans[i].inv; l *= trans[i].inv}
 		l
+	end
+
+	def QR
+		m = row_size - 1
+		n = column_size - 1
+		print "m:#{m} n:#{n} \n"
+		(n+1).times{|j|
+			print "pas #{j}\n"
+			v, beta = self[j..m, j].house
+			
+			print "v:"
+			p v
+      print "norm:  #{self[j..m, j].norm}\n"
+			print "\nP:\n"
+      print (Matrix.I(m-j+1)- beta * (v * v.t))
+
+			self[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * self[j..m, j..n]
+      print "\nSelf:\n"
+			print self
+      print "\n"
+			self[(j+1)..m,j] = v[2..(m-j+1)] if j < m
+		}
 	end
 end
