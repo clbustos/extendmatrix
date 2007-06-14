@@ -403,25 +403,27 @@ class Matrix
 		l
 	end
 
-	def QR
+	def hQR #Householder QR
+		h = []
+		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
 		print "m:#{m} n:#{n} \n"
 		(n+1).times{|j|
 			print "pas #{j}\n"
-			v, beta = self[j..m, j].house
-			
-			print "v:"
-			p v
-      print "norm:  #{self[j..m, j].norm}\n"
-			print "\nP:\n"
-      print (Matrix.I(m-j+1)- beta * (v * v.t))
+			v, beta = mat[j..m, j].house
 
-			self[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * self[j..m, j..n]
-      print "\nSelf:\n"
-			print self
-      print "\n"
-			self[(j+1)..m,j] = v[2..(m-j+1)] if j < m
+			t[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
+			print t[j]
+			
+			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
+			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m
 		}
+		h
+	end
+
+	def hQ
+		h = self.hQR
+
 	end
 end
