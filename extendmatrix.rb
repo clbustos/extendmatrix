@@ -137,14 +137,6 @@ class Vector
 		end
 		v
 	end
-
-#		u = v.clone
-#		for k in 1...v.size
-#			u[k] = v[k] - (u[0..k-1].map {|uj| uj.proj(v[k])}).inject {|sum, n| sum + n}
-#		end
-#		u
-
-
 end
 
 class Matrix
