@@ -39,7 +39,6 @@ class Vector
 		end
 	end
 
-
 	def collect! 
 		els = @elements.collect! {|v| yield(v)}
 		Vector.elements(els, false)
@@ -86,7 +85,7 @@ class Vector
 	end
 
 	def /(c)
-		map {|e| e / c}
+		map {|e| e.quo(c)}
 	end
 
 	def transpose
@@ -95,6 +94,7 @@ class Vector
 	
 	alias :t :transpose
 	
+	# Computes the Householder vector (MC, Golub, p. 210, algorithm 5.1.1)
 	def house
 		s = self[1..length-1]
 		sigma = s.inner_product(s)
@@ -106,14 +106,45 @@ class Vector
 			if self[0] <= 0
 				v[0] = self[0] - mu
 			else
-				v[0] = -sigma / (self[0] + mu)
+				v[0] = - sigma.quo(self[0] + mu)
 			end
 			v2 = v[0] ** 2
-			beta = 2 * v2 / (sigma + v2)
+			beta = 2 * v2.quo(sigma + v2)
 			v /= v[0]
 		end
 		return v, beta
 	end
+
+	# Projection operator (http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+	def proj(v)
+		vp = v.inner_product(self)
+		vp = Float vp if vp.is_a?(Integer)
+		self * (vp / inner_product(self))
+	end
+
+	def normalize
+		self / self.norm
+	end
+
+	# Gram-Schmidt process (http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+	def Vector.gram_schmidt(*vectors)
+		v = vectors.clone
+		for j in 0...v.size
+			for i in 0..j-1
+				v[j] -= v[i] * v[j].inner_product(v[i])
+			end
+			v[j] /= v[j].norm
+		end
+		v
+	end
+
+#		u = v.clone
+#		for k in 1...v.size
+#			u[k] = v[k] - (u[0..k-1].map {|uj| uj.proj(v[k])}).inject {|sum, n| sum + n}
+#		end
+#		u
+
+
 end
 
 class Matrix
@@ -213,7 +244,6 @@ class Matrix
 			m
 		end
 	end
-
 
 	def set(m)
 		0.upto(m.row_size - 1) do |i|
