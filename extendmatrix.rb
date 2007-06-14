@@ -126,7 +126,7 @@ class Vector
 		self / self.norm
 	end
 
-	# Gram-Schmidt process (http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+	# Stabilized Gram-Schmidt process (http://en.wikipedia.org/wiki/Gram-Schmidt_process#Algorithm)
 	def Vector.gram_schmidt(*vectors)
 		v = vectors.clone
 		for j in 0...v.size
