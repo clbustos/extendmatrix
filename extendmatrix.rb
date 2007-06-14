@@ -147,6 +147,7 @@ class Matrix
 	@wrap = nil
 	
 	def initialize(*argv)
+		print argv
 		return initialize_old(*argv) if argv[0].is_a?(Symbol)
 		n, m, val = argv; val = 0 if not val
 		f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
@@ -447,5 +448,20 @@ class Matrix
 	def hQ
 		h = self.hQR
 
+	end
+
+	# Modified Gram Schmidt QR factorization (MC, Golub, p. 232)
+	def gram_schmidt
+		r = clone
+		n = column_size
+		m = row_size
+		for k in 0...n
+			r[k,k] = self[0...m, k].norm
+			q[0...m, k] = self[0...m, k] / r[k, k]
+			for j in (k+1)...n
+				r[k, j] = q[0...m, k].t * self[0...m, j]
+				self[0...m, j] -= q[0...m, k] * r[k, j]
+			end
+		end
 	end
 end
