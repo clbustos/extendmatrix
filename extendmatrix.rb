@@ -131,7 +131,7 @@ class Matrix
 	end
 	
 	def initialize_old(init_method, *argv)
-		self.send(init_method, *argv)
+		self.funcall(init_method, *argv)
 	end
 
 	alias :ids :[]
