@@ -1,10 +1,10 @@
 require 'gnuplot'
+require 'rational'
 require 'matrix'
 require 'mapcar'
 require 'block'
 require 'tempfile'
 require 'nodel'
-
 
 class Vector
 	include Enumerable
@@ -147,7 +147,6 @@ class Matrix
 	@wrap = nil
 	
 	def initialize(*argv)
-		print argv
 		return initialize_old(*argv) if argv[0].is_a?(Symbol)
 		n, m, val = argv; val = 0 if not val
 		f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
@@ -237,6 +236,14 @@ class Matrix
 			m
 		end
 	end
+
+	# Division by a scalar
+	def quo(v)
+		map {|e| e.quo(v)}
+	end
+
+	# quo seems always desirable
+	alias :/ :quo
 
 	def set(m)
 		0.upto(m.row_size - 1) do |i|
@@ -455,6 +462,7 @@ class Matrix
 	# Modified Gram Schmidt QR factorization (MC, Golub, p. 232)
 	def gram_schmidt
 		r = clone
+		q = clone
 		n = column_size
 		m = row_size
 		for k in 0...n
