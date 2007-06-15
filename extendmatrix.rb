@@ -220,7 +220,6 @@ class Matrix
 
 	class << self
 		def diag(*args)
-			p args
 			dsize = 0
 			sizes = args.collect{|e| x = (e.is_a?(Matrix)) ? e.row_size : 1; dsize += x; x}
 			p sizes
@@ -229,7 +228,6 @@ class Matrix
 
 			sizes.size.times{|i| 
 				range = count..(count+sizes[i]-1)
-				p range
 				m[range, range] = args[i]
 				count += sizes[i]
 			}
@@ -438,13 +436,10 @@ class Matrix
 		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
-#		print "m:#{m} n:#{n} \n"
 		(n+1).times{|j|
-#			print "pas #{j}\n"
 			v, beta = mat[j..m, j].house
 
 			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
-#			print h[j]
 			
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
 			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m
@@ -452,12 +447,22 @@ class Matrix
 		h
 	end
 
-	def hQ
-		h = self.hQR
-		q = h[0]
-		1..h.size.each{|i| q *= h[i]}
-		q
-	end
+  # Q = H_1 * H_2 * ... * H_n
+  def hQ
+    h = self.hQR
+    q = h[0] 
+    (1...h.size).each{|i| q *= h[i]} 
+    q
+  end
+
+
+  # R = H_n * H_n-1 * ... * H_1 * A
+  def hR
+    h = self.hQR
+    r = self.clone
+    h.size.times{|i| r = h[i] * r}
+    r
+  end
 
 	# Modified Gram Schmidt QR factorization (MC, Golub, p. 232)
 	def gram_schmidt
