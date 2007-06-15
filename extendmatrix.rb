@@ -431,13 +431,13 @@ class Matrix
 		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
-		print "m:#{m} n:#{n} \n"
+#		print "m:#{m} n:#{n} \n"
 		(n+1).times{|j|
-			print "pas #{j}\n"
+#			print "pas #{j}\n"
 			v, beta = mat[j..m, j].house
 
-			t[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
-			print t[j]
+			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
+#			print h[j]
 			
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
 			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m
@@ -447,7 +447,9 @@ class Matrix
 
 	def hQ
 		h = self.hQR
-
+		q = h[0]
+		1..h.size.each{|i| q *= h[i]}
+		q
 	end
 
 	# Modified Gram Schmidt QR factorization (MC, Golub, p. 232)
