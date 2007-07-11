@@ -436,7 +436,7 @@ class Matrix
 		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
-		(n+1).times{|j|
+		n.times{|j|
 			v, beta = mat[j..m, j].house
 
 			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
@@ -447,14 +447,35 @@ class Matrix
 		h
 	end
 
-  # Q = H_1 * H_2 * ... * H_n
-  def hQ
-    h = self.hQR
+	def hBidiag #Householder Bidiagonalization
+		u = []
+		w = []
+		mat = self.clone
+		n.times{|j|
+			v, beta = mat[j..m,j].house
+			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
+			uj = mat[j+1..m, j] = v[2..(m-j+1)]
+			print "u#{j}:/n#{uj}"
+			print "#{uj * uj.t}"
+			u[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj * uj.t))
+		  
+			if j <= n - 2
+				v, beta = (mat[j, j+1..n].t).house
+				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
+				vj = mat[j, j+2..n] = v[2..n-j].t
+				w[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (vj * vj.t))
+				
+			end
+		}
+	end
+
+	#householder Q = H_1 * H_2 * H_3 * ... * H_n
+	def hQ 
+		h = self.hQR
     q = h[0] 
     (1...h.size).each{|i| q *= h[i]} 
     q
   end
-
 
   # R = H_n * H_n-1 * ... * H_1 * A
   def hR
