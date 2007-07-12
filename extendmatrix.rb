@@ -222,7 +222,6 @@ class Matrix
 		def diag(*args)
 			dsize = 0
 			sizes = args.collect{|e| x = (e.is_a?(Matrix)) ? e.row_size : 1; dsize += x; x}
-			p sizes
 			m = Matrix.zero(dsize)
 			count = 0
 
@@ -436,7 +435,7 @@ class Matrix
 		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
-		n.times{|j|
+		(n+1).times{|j|
 			v, beta = mat[j..m, j].house
 
 			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
@@ -451,22 +450,23 @@ class Matrix
 		u = []
 		w = []
 		mat = self.clone
-		n.times{|j|
+		m = row_size - 1
+		n = column_size - 1
+		(n+1).times{|j|
 			v, beta = mat[j..m,j].house
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
-			uj = mat[j+1..m, j] = v[2..(m-j+1)]
-			print "u#{j}:/n#{uj}"
-			print "#{uj * uj.t}"
-			u[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj * uj.t))
-		  
+			uj = mat[j+1..m, j] = v[1..(m-j)]
+			u[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(m-j)- beta * (uj * uj.t))
+
 			if j <= n - 2
-				v, beta = (mat[j, j+1..n].t).house
+				v, beta = (mat[j, j+1..n]).house
 				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
-				vj = mat[j, j+2..n] = v[2..n-j].t
-				w[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (vj * vj.t))
-				
-			end
-		}
+				vj = mat[j, j+2..n] = v[1..n-j-1].t
+				w[j] = Matrix.diag(Matrix.I(j+2), Matrix.I(n-j-1)- beta * (vj * vj.t))
+				print w[j]
+			end	
+			}
+		return u, w
 	end
 
 	#householder Q = H_1 * H_2 * H_3 * ... * H_n
