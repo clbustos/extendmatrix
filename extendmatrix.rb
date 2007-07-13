@@ -461,7 +461,7 @@ class Matrix
 			if j <= n - 2
 				v, beta = (mat[j, j+1..n]).house
 				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
-				vj = mat[j, j+2..n] = v[1..n-j-1].t
+				vj = mat[j, j+2..n] = v[1..n-j-1]
 				w[j] = Matrix.diag(Matrix.I(j+2), Matrix.I(n-j-1)- beta * (vj * vj.t))
 				print w[j]
 			end	
