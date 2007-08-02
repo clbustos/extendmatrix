@@ -21,7 +21,11 @@ class Vector
 	def [](i)
 		case i
 		when Range
-			Vector[*to_a.slice(i)]
+			if i.entries.size == 1
+				index(i.max)
+			else
+				Vector[*to_a.slice(i)]
+			end
 		else
 			index(i)
 		end	
@@ -36,6 +40,14 @@ class Vector
 			(v.size + i.begin .. i.end).each {|e| self[e] = 0}
 		else
 			@elements[i]=v 
+		end
+	end
+
+	class << self
+		def add(*args)
+			v = []
+			args.each{|x| v += x.to_a}
+			Vector[*v]
 		end
 	end
 
@@ -455,14 +467,22 @@ class Matrix
 		(n+1).times{|j|
 			v, beta = mat[j..m,j].house
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
-			uj = mat[j+1..m, j] = v[1..(m-j)]
-			u[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(m-j)- beta * (uj * uj.t))
+			mat[j+1..m, j] = v[1..(m-j)]
+			# uj = [1 mat[j+1..m,j]] U_j's Householder vector
+			print "\nmat[j+1..m, j]: \n#{mat[j+1..m, j]}"
+			uj = Vector.add(Vector[1], mat[j+1..m, j])
+			print "uj: #{uj}"
+			print "\nm-j = #{m-j}\n"
 
+			u[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj * uj.t))
+			
 			if j <= n - 2
 				v, beta = (mat[j, j+1..n]).house
 				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
-				vj = mat[j, j+2..n] = v[1..n-j-1]
-				w[j] = Matrix.diag(Matrix.I(j+2), Matrix.I(n-j-1)- beta * (vj * vj.t))
+				mat[j, j+2..n] = v[1..n-j-1]
+	
+				vj = Vector.add(Vector[1], mat[j, j+2..n])
+				w[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj * vj.t))
 				print w[j]
 			end	
 			}
