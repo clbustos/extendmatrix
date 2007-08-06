@@ -21,11 +21,7 @@ class Vector
 	def [](i)
 		case i
 		when Range
-			if i.entries.size == 1
-				index(i.max)
-			else
-				Vector[*to_a.slice(i)]
-			end
+			Vector[*to_a.slice(i)]
 		else
 			index(i)
 		end	
@@ -215,7 +211,8 @@ class Matrix
 					self.row= i, v, j
 				end
 			else
-				@rows[i][j] = v
+				@rows[i][j] = (v.is_a?(Vector) ? v[0] : v)
+
 			end
 		end		
 	end	
@@ -468,12 +465,9 @@ class Matrix
 			v, beta = mat[j..m,j].house
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
 			mat[j+1..m, j] = v[1..(m-j)]
-			# uj = [1 mat[j+1..m,j]] U_j's Householder vector
-			print "\nmat[j+1..m, j]: \n#{mat[j+1..m, j]}"
-			uj = Vector.add(Vector[1], mat[j+1..m, j])
-			print "uj: #{uj}"
-			print "\nm-j = #{m-j}\n"
 
+			# uj = [1 mat[j+1..m,j]] U_j's Householder vector
+			uj = Vector.add(Vector[1], mat[j+1..m, j])
 			u[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj * uj.t))
 			
 			if j <= n - 2
@@ -483,10 +477,20 @@ class Matrix
 	
 				vj = Vector.add(Vector[1], mat[j, j+2..n])
 				w[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj * vj.t))
-				print w[j]
 			end	
 			}
 		return u, w
+	end
+	
+	# the bidiagonal matrix obtained with 
+	# Householder Bidiagonalization algorithm
+	def bidiagonal 
+		u,v = self.hBidiag
+		ub = Matrix.I(row_size)
+		u.each{|x| ub *= x}
+		vb = Matrix.I(column_size)
+		v.each{|x| vb *= x}
+		ub.t * self * vb
 	end
 
 	#householder Q = H_1 * H_2 * H_3 * ... * H_n
