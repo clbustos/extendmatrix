@@ -526,7 +526,7 @@ class Matrix
 	end
 
 	def givens(a, b)
-		if b = 0 
+		if b == 0 
 			c = 0; s = 0
 		else
 			if b.abs > a.abs
