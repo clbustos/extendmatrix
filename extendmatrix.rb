@@ -524,4 +524,17 @@ class Matrix
 			end
 		end
 	end
+
+	def givens(a, b)
+		if b = 0 
+			c = 0; s = 0
+		else
+			if b.abs > a.abs
+				theta = Float(-a)/b; s = 1/Math.sqrt(1+theta^2); c = s * theta
+			else
+				theta = Float(-b)/a; c = 1/Math.sqrt(1+theta^2); s = c * theta
+			end
+		end
+	end
+
 end
