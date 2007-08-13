@@ -545,8 +545,8 @@ class Matrix
 			m.downto(j+1){|i|
 				c, s = givens(mat[i - 1, j], mat[i, j])
 				qt = Matrix.I(m+1)
-				qt[i,i] = c; qt[i,j] = s
-				qt[j,i] = -s; qt[j,j] = c
+				qt[i-1,i-1] = c; qt[i-1,i] = s
+				qt[i,i-1] = -s; qt[i,i] = c
 				q[q.size] = qt
 				mat[i-1..i, j..n] = Matrix[[c, -s],[s, c]] * mat[i-1..i, j..n]	}}
 		return mat, q
@@ -578,6 +578,27 @@ class Matrix
 		q = Matrix.I(row_size)
 		qj.each{|x| q *= x}
 		q
+	end
+
+	#Householder Reduction to Hessenberg Form
+	def hr2hf
+		u = []
+		mat = self.clone
+		n = row_size - 1
+		(n - 1).times{|k|
+			v, beta = mat[k+1..n,k].house #the householder matrice part
+			hhu = Matrix.I(n-k) - beta * (v * v.t) 
+			u[k] = Matrix.diag(Matrix.I(k+1), hhu)
+			mat[k+1..n, k..n] = hhu * mat[k+1..n, k..n]
+			mat[0..n, k+1..n] = mat[0..n, k+1..n] * hhu}
+		return mat, u
+	end
+
+	def hr2hf_u0
+		mat, u = hr2hf
+		u0 = Matrix.I(row_size)
+		u.each{|x| u0 *= x}
+		u0
 	end
 
 
