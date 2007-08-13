@@ -450,8 +450,7 @@ class Matrix
 			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
 			
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
-			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m
-		}
+			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m }
 		h
 	end
 
@@ -477,8 +476,7 @@ class Matrix
 	
 				vj = Vector.add(Vector[1], mat[j, j+2..n])
 				w[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj * vj.t))
-			end	
-			}
+			end	}
 		return u, w
 	end
 	
@@ -537,5 +535,50 @@ class Matrix
 		end
 		return c, s
 	end
+
+	def givensQR
+		q = []
+		mat = self.clone
+		m = row_size - 1
+		n = column_size - 1
+		(n+1).times{|j|
+			m.downto(j+1){|i|
+				c, s = givens(mat[i - 1, j], mat[i, j])
+				qt = Matrix.I(m+1)
+				qt[i,i] = c; qt[i,j] = s
+				qt[j,i] = -s; qt[j,j] = c
+				q[q.size] = qt
+				mat[i-1..i, j..n] = Matrix[[c, -s],[s, c]] * mat[i-1..i, j..n]	}}
+		return mat, q
+	end
+
+	def givensQ
+		r, qt = givensQR
+		q = Matrix.I(row_size)
+		qt.each{|x| q *= x}
+		q
+	end
+
+
+	#the matrix must be an upper Hessenberg matrix
+	def hessenbergQR
+		q = []
+		mat = self.clone
+		n = row_size - 1
+		n.times{|j|
+			c, s = givens(mat[j,j], mat[j+1, j])
+			cs = Matrix[[c, s], [-s, c]]
+			q[j] = Matrix.diag(Matrix.I(j), cs, Matrix.I(n - j - 1))
+			mat[j..j+1, j..n] = cs.t * mat[j..j+1, j..n] }		
+		return mat, q
+	end
+
+	def hessenbergQ
+		r, qj = hessenbergQR
+		q = Matrix.I(row_size)
+		qj.each{|x| q *= x}
+		q
+	end
+
 
 end
