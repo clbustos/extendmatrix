@@ -68,6 +68,7 @@ class Vector
 	def norm(p = 2)
     Norm.sqnorm(self, p) ** (Float(1)/p)
   end
+
   
   def norm_inf
     [min.abs, max.abs].max
@@ -365,6 +366,11 @@ class Matrix
 	def norm(p = 2)
     Vector::Norm.sqnorm(self, p) ** (Float(1)/p)
 	end
+	
+	def norm_frobenius
+		norm
+	end
+	alias :normF :norm_frobenius
 
 	def to_plot
 		gplot = Tempfile.new('plot', Dir::tmpdir, false) # do not unlink
@@ -528,9 +534,9 @@ class Matrix
 			c = 0; s = 0
 		else
 			if b.abs > a.abs
-				theta = Float(-a)/b; s = 1/Math.sqrt(1+theta**2); c = s * theta
+				tau = Float(-a)/b; s = 1/Math.sqrt(1+tau**2); c = s * tau
 			else
-				theta = Float(-b)/a; c = 1/Math.sqrt(1+theta**2); s = c * theta
+				tau = Float(-b)/a; c = 1/Math.sqrt(1+tau**2); s = c * tau
 			end
 		end
 		return c, s
@@ -618,5 +624,70 @@ class Matrix
 			h = h1.clone
 			i += 1
 		end
+	end
+
+	module Jacobi
+		def Jacobi.off(a)
+			n = a.row_size
+			sum = 0
+			n.times{|i| n.times{|j| sum += a[i, j]**2 if j != i}}
+			Math.sqrt(sum)
+		end
+
+		def Jacobi.max(a)
+			n = a.row_size
+			max = 0
+			p = 0
+			q = 0
+			(1...n).each{|i|
+				((i+1)...n).each{|j| 
+					val = a[i, j].abs
+					if val > max
+						max = val
+						p = i
+						q = j
+					end	}}
+			return p, q
+		end
+
+		def Jacobi.sym_schur2(a, p, q)
+			if a[p, q] != 0
+				tau = Float(a[q, q] - a[p, p])/(2 * a[p, q])
+				if tau >= 0
+					t = 1./(tau + Math.sqrt(1 + tau ** 2))
+				else	
+					t = -1./(-tau + Math.sqrt(1 + tau ** 2))
+				end
+				c = 1./Math.sqrt(1 + tau ** 2)
+				s = t * c
+			else
+				c = 1
+				s = 0
+			end
+			return c, s
+		end
+
+		def Jacobi.J(p, q, c, s, n)
+			j = Matrix.I(n)
+			j[p,p] = c; j[p, q] = s
+			j[q,p] = -s; j[q, q] = c
+			j
+		end
+	end
+
+	# Classical Jacobi 8.4.3 Golub & van Loan
+	def cJacobi(tol)
+		a = self.clone
+		n = row_size
+		v = Matrix.I(n)
+		eps = tol * a.normF
+		while Jacobi.off(a) > eps
+			p, q = Jacobi.max(a)
+			c, s = Jacobi.sym_schur2(a, p, q)
+			j = Jacobi.J(p, q, c, s, n)
+			a = j.t * a * j
+			v = v * j
+		end
+		return a, v
 	end
 end
