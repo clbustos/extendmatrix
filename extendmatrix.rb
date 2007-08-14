@@ -439,7 +439,7 @@ class Matrix
 		l
 	end
 
-	def hQR #Householder QR
+	def houseQR #Householder QR
 		h = []
 		mat = self.clone
 		m = row_size - 1
@@ -454,9 +454,11 @@ class Matrix
 		h
 	end
 
-	def hBidiag #Householder Bidiagonalization
-		u = []
-		w = []
+	def houseBidiag #Householder Bidiagonalization
+		#u = []
+		ub = Matrix.I(row_size)
+		#w = []
+		vb = Matrix.I(column_size)
 		mat = self.clone
 		m = row_size - 1
 		n = column_size - 1
@@ -465,43 +467,41 @@ class Matrix
 			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
 			mat[j+1..m, j] = v[1..(m-j)]
 
-			# uj = [1 mat[j+1..m,j]] U_j's Householder vector
-			uj = Vector.add(Vector[1], mat[j+1..m, j])
-			u[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj * uj.t))
-			
+			# uj_vector = [1, mat[j+1..m,j]] U_j's Householder vector
+			uj_vector = Vector.add(Vector[1], mat[j+1..m, j])
+			uj = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj_vector * uj_vector.t))
+			ub *= uj
+
 			if j <= n - 2
 				v, beta = (mat[j, j+1..n]).house
 				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
 				mat[j, j+2..n] = v[1..n-j-1]
 	
-				vj = Vector.add(Vector[1], mat[j, j+2..n])
-				w[j] = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj * vj.t))
+				vj_vector = Vector.add(Vector[1], mat[j, j+2..n])
+				vj = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj_vector * vj_vector.t))
+				vb	*= vj
 			end	}
-		return u, w
+		return ub, vb
 	end
 	
 	# the bidiagonal matrix obtained with 
 	# Householder Bidiagonalization algorithm
 	def bidiagonal 
-		u,v = self.hBidiag
-		ub = Matrix.I(row_size)
-		u.each{|x| ub *= x}
-		vb = Matrix.I(column_size)
-		v.each{|x| vb *= x}
+		ub,vb = self.houseBidiag
 		ub.t * self * vb
 	end
 
 	#householder Q = H_1 * H_2 * H_3 * ... * H_n
-	def hQ 
-		h = self.hQR
+	def houseQ 
+		h = self.houseQR
     q = h[0] 
     (1...h.size).each{|i| q *= h[i]} 
     q
   end
 
   # R = H_n * H_n-1 * ... * H_1 * A
-  def hR
-    h = self.hQR
+  def houseR
+    h = self.houseQR
     r = self.clone
     h.size.times{|i| r = h[i] * r}
     r
@@ -581,25 +581,42 @@ class Matrix
 	end
 
 	#Householder Reduction to Hessenberg Form
-	def hr2hf
-		u = []
-		mat = self.clone
+	def hessenberg
+		u0 = Matrix.I(row_size)
+		h = self.clone
 		n = row_size - 1
 		(n - 1).times{|k|
-			v, beta = mat[k+1..n,k].house #the householder matrice part
-			hhu = Matrix.I(n-k) - beta * (v * v.t) 
-			u[k] = Matrix.diag(Matrix.I(k+1), hhu)
-			mat[k+1..n, k..n] = hhu * mat[k+1..n, k..n]
-			mat[0..n, k+1..n] = mat[0..n, k+1..n] * hhu}
-		return mat, u
+			v, beta = h[k+1..n,k].house #the householder matrice part
+			houseV = Matrix.I(n-k) - beta * (v * v.t) 
+			u0 *= Matrix.diag(Matrix.I(k+1), houseV)
+			h[k+1..n, k..n] = houseV * h[k+1..n, k..n]
+			h[0..n, k+1..n] = h[0..n, k+1..n] * houseV}
+		return h, u0
 	end
 
-	def hr2hf_u0
-		mat, u = hr2hf
-		u0 = Matrix.I(row_size)
-		u.each{|x| u0 *= x}
-		u0
+	def hessenbergU0
+		hessenberg[1]
+	end
+	
+	def diagTol(m1, m0, err)
+		m1.row_size.times{|i|
+			return false if (m1[i,i]-m0[i,i]).abs > err
+		}
+		true
 	end
 
-
+	def eigenvalQR(err)
+		h = self.hessenberg[0]
+		i = 0
+		loop do
+			h1 = h.houseR * h.houseQ	
+			print "\ni:#{i}\n"
+			print h
+			print "\n"
+			print h1
+			break if diagTol(h1, h, err)
+			h = h1.clone
+			i += 1
+		end
+	end
 end
