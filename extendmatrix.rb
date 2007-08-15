@@ -604,14 +604,14 @@ class Matrix
 		hessenberg[1]
 	end
 	
-	def diagTol(m1, m0, err)
+	def diagTol(m1, m0, eps)
 		m1.row_size.times{|i|
-			return false if (m1[i,i]-m0[i,i]).abs > err
+			return false if (m1[i,i]-m0[i,i]).abs > eps
 		}
 		true
 	end
 
-	def eigenvalQR(err)
+	def eigenvalQR(eps = 1.0e-10)
 		h = self.hessenberg[0]
 		i = 0
 		loop do
@@ -620,10 +620,11 @@ class Matrix
 			print h
 			print "\n"
 			print h1
-			break if diagTol(h1, h, err)
+			break if diagTol(h1, h, eps)
 			h = h1.clone
 			i += 1
 		end
+		h
 	end
 
 	module Jacobi
@@ -639,7 +640,7 @@ class Matrix
 			max = 0
 			p = 0
 			q = 0
-			(1...n).each{|i|
+			n.times{|i|
 				((i+1)...n).each{|j| 
 					val = a[i, j].abs
 					if val > max
@@ -658,7 +659,7 @@ class Matrix
 				else	
 					t = -1./(-tau + Math.sqrt(1 + tau ** 2))
 				end
-				c = 1./Math.sqrt(1 + tau ** 2)
+				c = 1./Math.sqrt(1 + t ** 2)
 				s = t * c
 			else
 				c = 1
@@ -676,14 +677,17 @@ class Matrix
 	end
 
 	# Classical Jacobi 8.4.3 Golub & van Loan
-	def cJacobi(tol)
+	def cJacobi(tol = 1.0e-10)
 		a = self.clone
 		n = row_size
 		v = Matrix.I(n)
 		eps = tol * a.normF
 		while Jacobi.off(a) > eps
+			print "\neps:#{eps} off:#{Jacobi.off(a)}\n"
+			print a
 			p, q = Jacobi.max(a)
 			c, s = Jacobi.sym_schur2(a, p, q)
+			print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
 			j = Jacobi.J(p, q, c, s, n)
 			a = j.t * a * j
 			v = v * j
