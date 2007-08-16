@@ -40,7 +40,7 @@ class Vector
 	end
 
 	class << self
-		def add(*args)
+		def concat(*args)
 			v = []
 			args.each{|x| v += x.to_a}
 			Vector[*v]
@@ -163,7 +163,8 @@ class Matrix
 	end
 	
 	def initialize_old(init_method, *argv)
-		self.funcall(init_method, *argv)
+		self.funcall(init_method, *argv) # in Ruby1.9
+		#self.send(init_method, *argv) # in Ruby1.8
 	end
 
 	alias :ids :[]
@@ -242,6 +243,7 @@ class Matrix
 			}
 			m
 		end
+
 	end
 
 	# Division by a scalar
@@ -407,10 +409,15 @@ class Matrix
 	def column2matrix(c) # return the colomn/s of matrix as a matrix
 		to_matrix(:column, c).t
 	end
-
+		
+	def equal_in_delta?(mat, delta = 1.0e-10)
+		delta = delta.abs
+		mapcar(self, mat){|x, y| return false if (x < y - delta or x > y + delta)  }
+		true
+	end
 
   module LU
-    def LU.tau(m, k) # calculate the  
+    def LU.tau(m, k) 
       t = m.column2matrix(k)
       tk = t[k, 0]
       (0..k).each{|i| t[i, 0] = 0}
@@ -445,61 +452,59 @@ class Matrix
 		l
 	end
 
-	def houseQR #Householder QR
-		h = []
-		mat = self.clone
-		m = row_size - 1
-		n = column_size - 1
-		(n+1).times{|j|
-			v, beta = mat[j..m, j].house
+	module House
+		def House.QR(mat) #Householder QR
+			h = []
+			a = mat.clone
+			m = a.row_size
+			n = a.column_size
+			n.times{|j|
+				v, beta = a[j..m - 1, j].house
 
-			h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (v * v.t))
+				h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j)- beta * (v * v.t))
 			
-			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
-			mat[(j+1)..m,j] = v[2..(m-j+1)] if j < m }
-		h
-	end
+				a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
+				a[(j+1)..m-1,j] = v[2..(m-j)] if j < m - 1 }
+			h
+		end
 
-	def houseBidiag #Householder Bidiagonalization
-		#u = []
-		ub = Matrix.I(row_size)
-		#w = []
-		vb = Matrix.I(column_size)
-		mat = self.clone
-		m = row_size - 1
-		n = column_size - 1
-		(n+1).times{|j|
-			v, beta = mat[j..m,j].house
-			mat[j..m, j..n] = (Matrix.I(m-j+1) - beta * (v * v.t)) * mat[j..m, j..n]
-			mat[j+1..m, j] = v[1..(m-j)]
+		def House.UV(essential, dim, beta)
+			v = Vector.concat(Vector[1], essential)
+			dimv = v.size
+			Matrix.diag(Matrix.I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
+		end
 
-			# uj_vector = [1, mat[j+1..m,j]] U_j's Householder vector
-			uj_vector = Vector.add(Vector[1], mat[j+1..m, j])
-			uj = Matrix.diag(Matrix.I(j), Matrix.I(m-j+1)- beta * (uj_vector * uj_vector.t))
-			ub *= uj
+		def House.bidiag(mat) #Householder Bidiagonalization
+			a = mat.clone
+			m = a.row_size
+			n = a.column_size
+			ub = Matrix.I(m)
+			vb = Matrix.I(n)
+			n.times{|j|
+				v, beta = a[j..m-1,j].house
+				a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
+				a[j+1..m-1, j] = v[1..(m-j-1)]
+				ub *= UV(a[j+1..m-1,j], m, beta) #Ub = U_1 * U_2 * ... * U_n
+				if j < n - 2
+					v, beta = (a[j, j+1..n-1]).house
+					a[j..m-1, j+1..n-1] = a[j..m-1, j+1..n-1] * (Matrix.I(n-j-1) - beta * (v * v.t))
+					a[j, j+2..n-1] = v[1..n-j-2]
+					vb  *= UV(a[j, j+2..n-1], n, beta) #Vb = V_1 * U_2 * ... * V_n-2	
+				end	}
+			return ub, vb
+		end
+	end #end of Householder module
 
-			if j <= n - 2
-				v, beta = (mat[j, j+1..n]).house
-				mat[j..m, j+1..n] = mat[j..m, j+1..n] * (Matrix.I(n-j) - beta * (v * v.t))
-				mat[j, j+2..n] = v[1..n-j-1]
-	
-				vj_vector = Vector.add(Vector[1], mat[j, j+2..n])
-				vj = Matrix.diag(Matrix.I(j+1), Matrix.I(n-j)- beta * (vj_vector * vj_vector.t))
-				vb	*= vj
-			end	}
-		return ub, vb
-	end
-	
 	# the bidiagonal matrix obtained with 
 	# Householder Bidiagonalization algorithm
 	def bidiagonal 
-		ub,vb = self.houseBidiag
+		ub, vb = House.bidiag(self)
 		ub.t * self * vb
 	end
 
 	#householder Q = H_1 * H_2 * H_3 * ... * H_n
 	def houseQ 
-		h = self.houseQR
+		h = House.QR(self)
     q = h[0] 
     (1...h.size).each{|i| q *= h[i]} 
     q
@@ -507,7 +512,7 @@ class Matrix
 
   # R = H_n * H_n-1 * ... * H_1 * A
   def houseR
-    h = self.houseQR
+    h = House.QR(self)
     r = self.clone
     h.size.times{|i| r = h[i] * r}
     r
