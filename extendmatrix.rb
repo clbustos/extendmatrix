@@ -1,10 +1,7 @@
-require 'gnuplot'
 require 'rational'
 require 'matrix'
 require 'mapcar'
 require 'block'
-require 'tempfile'
-require 'nodel'
 
 class Vector
 	include Enumerable
@@ -306,7 +303,6 @@ class Matrix
 				s += "\n" if i == 0
 			end
 			s
-	#		to_a.each {|r| r.each {|x| print format("%#{len_col}s ", x.to_s)}; print "\n"}
 		end
 	end
 
@@ -314,29 +310,47 @@ class Matrix
 		@rows.each {|x| x.each {|e| yield(e)}}
 		nil
 	end
-  
+
+	  
+	module Block
+		def Block.default(block)
+    	block ? lambda { |i| block.call(i) } : lambda {|i| i }
+  	end
+	end
+
+	#
+	# Return an array with the elements collected from the row "i". 
+	# When a block is given, the elements of that vector are iterated.
+	#
+	def row_collect(i, &block)
+		f = Block.default(block)
+		@rows[i].collect {|e| f.call(e)}
+	end
+
+	#
+	# Return row vector number "i" like Matrix.row as a Vector.
+	# When the block is given, the elements of row "i" are mmodified
+	#
 	def row!(i)
 		if block_given?
-			@rows[i].collect! {|e| yield(e)}
+			@rows[i].collect! {|e| yield e }
 		else
 			Vector.elements(@rows[i], false)
 		end
 	end
+	alias :row_collect! :row!
 
-	def row_collect(row, &block)
-		f = default_block(block)
-		@rows[row].collect {|e| f.call(e)}
-	end
-	
 	def column_collect(col, &block)
-		f = default_block(block)	
+		f = Block.default(block)	
 		(0...row_size).collect {|r| f.call(self[r, col])}
 	end
 	
-	alias :row_collect! :row!
-	
 	def column!(j)
-		return (0...row_size).collect { |i| @rows[i][j] = yield(@rows[i][j])} if block_given?
+		if block_given?
+			(0...row_size).collect { |i| @rows[i][j] = yield @rows[i][j] }
+		else
+			column(j)
+		end
 	end
 
 	alias :column_collect! :column!
@@ -373,24 +387,6 @@ class Matrix
 		norm
 	end
 	alias :normF :norm_frobenius
-
-	def to_plot
-		gplot = Tempfile.new('plot', Dir::tmpdir, false) # do not unlink
-		gplot.puts(to_s)
-		gplot.close
-		gplot.path
-	end
-	
-	def plot(back = true)
-		Gnuplot.plot("splot '#{to_plot}' matrix with lines; pause -1", back)
-	end
-
-	def Matrix.mplot(*matrices)
-		s = "splot "
-		matrices.each {|x| s += "'#{x.to_plot}' matrix with lines,"}
-		s = s[0..-2] + "; pause -1"
-		Gnuplot.plot(s)
-	end
 
 	def empty?
 		@rows.empty? if @rows
@@ -644,10 +640,6 @@ class Matrix
 		i = 0
 		loop do
 			h1 = h.houseR * h.houseQ	
-			print "\ni:#{i}\n"
-			print h
-			print "\n"
-			print h1
 			break if diagTol(h1, h, eps) or steps <= 0
 			h = h1.clone 
 			steps -= 1

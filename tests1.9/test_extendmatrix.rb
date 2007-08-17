@@ -109,7 +109,7 @@ class TestMatrix < Test::Unit::TestCase
 		m = Matrix[[1, 2, 1], [2, 1, 2]]
 		assert_equal [1, 4, 1], m.row!(0) {|x| x*x}
 		m = Matrix[[1, 2, 1], [2, 1, 2]]
-		assert_equal Vector.elements([1, 2, 1], false), m.row!(0)
+		assert_equal Vector[1, 2, 1], m.row!(0)
   end
  
  	def test_row_collect
@@ -160,7 +160,7 @@ class TestMatrix < Test::Unit::TestCase
 	def test_houseQR
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
 		assert_equal true, m.equal_in_delta?(m.houseQ * m.houseR)
-		q = Matrix[[0.0776, 0.8330, 0.5329, 0.1264], 
+		q = Matrix[[0.0776, 0.8330, 0.5329,  0.1264], 
 		 					 [0.3104, 0.4512, -0.8048, 0.2286], 
 		  				 [0.5433, 0.0694, 0.0108, -0.8365], 
 			 				 [0.7761, -0.3123, 0.2610, 0.4815]]
@@ -169,8 +169,23 @@ class TestMatrix < Test::Unit::TestCase
 
 	def test_bidiagonalization	# MC, Golub, p252, Example 5.4.2
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
-		bidiag = Matrix[[12.884, 21.876, 0],[0, 2.246, -0.613],[0, 0, 0],[0, 0, 0]]
+		bidiag = Matrix[[12.884,	21.876,	0			],
+										[0, 		 	2.246, 	-0.613],
+										[0, 			0, 			0			],
+										[0, 			0, 			0			]]
 		assert_equal true, bidiag.equal_in_delta?(m.bidiagonal, 0.001)
+	end
+
+	def test_givens	
+		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+		assert_equal true, m.equal_in_delta?(m.givensQ * m.givensR, 0.001)
+		assert_equal true, m.equal_in_delta?(Matrix::Givens.Q(m) * Matrix::Givens.R(m), 0.001)
+	end
+
+	def test_eigenvalQR
+		m = Matrix.new(3, 3){1} + Matrix.diagonal(2, 2, 2)
+		e = Matrix[[5, 0, 0],[0, 2, 0],[0, 0, 2]]
+		assert_equal true, m.eigenvalQR.equal_in_delta?(e, 1.0e-5)
 	end
 end
 
