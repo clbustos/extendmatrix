@@ -1,7 +1,6 @@
 require 'rational'
 require 'matrix'
 require 'mapcar'
-require 'block'
 
 class Vector
 	include Enumerable
@@ -312,23 +311,49 @@ class Matrix
 	end
 
 	  
-	module Block
-		def Block.default(block)
+	module MMatrix
+		def MMatrix.default_block(block)
     	block ? lambda { |i| block.call(i) } : lambda {|i| i }
   	end
+
+		#
+		# Returns: 
+		# 1) the index of row/column and 
+		# 2) the values Vector for changing the row/column and 
+		# 3) the range of changes
+		#
+		def MMatrix.id_vect_range(args, l)
+			i = args[0] # the column(/the row) to be change
+			vect = args[1] # the values vector
+			
+		  case args.size
+				when 3 then range = args[2] # the range of the elements to be change
+				when 4 then range = args[2]..args[3] #the range by borders
+				else range = 0...l
+			end
+			return i, vect, range
+		end
+		
+		#
+		# Returns the matrix of rows/columns indicated in 'range'
+		#
+		def MMatrix.rc2matrix(mat, direction, range)
+			a = mat.send(direction, range).to_a
+			Matrix[*a] 
+		end
 	end
 
 	#
-	# Return an array with the elements collected from the row "i". 
+	# Returns an array with the elements collected from the row "i". 
 	# When a block is given, the elements of that vector are iterated.
 	#
 	def row_collect(i, &block)
-		f = Block.default(block)
+		f = MMatrix.default_block(block)
 		@rows[i].collect {|e| f.call(e)}
 	end
 
 	#
-	# Return row vector number "i" like Matrix.row as a Vector.
+	# Returns row vector number "i" like Matrix.row as a Vector.
 	# When the block is given, the elements of row "i" are mmodified
 	#
 	def row!(i)
@@ -340,11 +365,19 @@ class Matrix
 	end
 	alias :row_collect! :row!
 
-	def column_collect(col, &block)
-		f = Block.default(block)	
-		(0...row_size).collect {|r| f.call(self[r, col])}
+	#
+	# Returns an array with the elements collected from the column "j". 
+	# When a block is given, the elements of that vector are iterated.
+	#
+	def column_collect(j, &block)
+		f = MMatrix.default_block(block)	
+		(0...row_size).collect {|r| f.call(self[r, j])}
 	end
 	
+	#
+	# Returns column vector number "j" as a Vector.
+	# When the block is given, the elements of column "j" are mmodified
+	#
 	def column!(j)
 		if block_given?
 			(0...row_size).collect { |i| @rows[i][j] = yield @rows[i][j] }
@@ -352,31 +385,22 @@ class Matrix
 			column(j)
 		end
 	end
-
 	alias :column_collect! :column!
 
+	#
+	# 
+	#
 	def column=(args)
-		c = args[0] # the column to be change
-		v = args[1] #the values vector
-
-	  case args.size
-		when 3 then r = args[2] # the range 2..4
-		when 4 then r = args[2]..args[3] #the range by borders
-		else r = 0...row_size
-		end
-		#r.each{|e| self[e, c] = v[e - r.begin]}
-		(self.row_size..r.begin - 1).each{|e| self[e, c] = 0}
-		[v.size, r.entries.size].min.times{|e| self[e + r.begin, c] = v[e]}
-		((v.size + r.begin)..r.end).each {|e| self[e, c] = 0}
+		m = row_size
+		c, v, r = MMatrix.id_vect_range(args, m)
+		(m..r.begin - 1).each{|i| self[i, c] = 0}
+		[v.size, r.entries.size].min.times{|i| self[i + r.begin, c] = v[i]}
+		((v.size + r.begin)..r.entries.last).each {|i| self[i, c] = 0}
 	end
 	
 	def row=(args)
-		case args.size
-		when 3 then range = args[2]
-		when 4 then range = args[2]..args[3]
-		else range = 0...column_size
-		end
-		row!(args[0])[range]=args[1]
+		i, val, range = MMatrix.id_vect_range(args, column_size) 	
+		row!(i)[range] = val
 	end
 
 	def norm(p = 2)
@@ -392,18 +416,14 @@ class Matrix
 		@rows.empty? if @rows
 	end
 
-# some new features
-	def to_matrix(method, arg)
-		a = self.send(method, arg).to_a
-		(arg.is_a?(Range)) ? Matrix[*a] :	Matrix[a]
+	# Returns the row/s of matrix as a Matrix 
+	def row2matrix(r) 
+		MMatrix.rc2matrix(self, :row, r)
 	end
 
-	def row2matrix(r) # return the row/s of matrix as a matrix 
-		to_matrix(:row, r)
-	end
-
-	def column2matrix(c) # return the colomn/s of matrix as a matrix
-		to_matrix(:column, c).t
+	# Returns the colomn/s of matrix as a Matrix
+	def column2matrix(c) 
+		MMatrix.rc2matrix(self, :column, c).t
 	end
 		
 	def equal_in_delta?(mat, delta = 1.0e-10)

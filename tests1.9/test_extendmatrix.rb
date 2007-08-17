@@ -136,6 +136,22 @@ class TestMatrix < Test::Unit::TestCase
 		assert_equal Matrix[[1, 4, 3], [4, 10, 6]], m
   end
 
+	def test_column=
+		m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+		m.column= 1, Vector[1,1,1,1,1,1]
+		assert_equal Matrix[[1, 1, 3],[4, 1, 6],[7, 1, 9]], m
+		m.column= 2, Vector[9,9], 0..1
+		assert_equal Matrix[[1, 1, 9],[4, 1, 9],[7, 1, 9]], m
+	end
+
+	def test_row=
+		m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+		m.row= 1, Vector[1,1,1,1,1,1]
+		assert_equal Matrix[[1, 2, 3],[1, 1, 1],[7, 8, 9]], m
+		m.row= 2, Vector[9,9], 0..2
+		assert_equal Matrix[[1, 2, 3],[1, 1, 1],[9, 9, 0]], m
+	end
+
 	def test_norm
 		m = Matrix[[1, 2, 1], [2, 1, 2]]
 		assert_equal Math.sqrt(15), m.norm
@@ -147,6 +163,13 @@ class TestMatrix < Test::Unit::TestCase
 		m = Matrix[]
 		assert_equal true, m.empty?
   end
+
+	def test_row2matrix
+		m = Matrix.new(4, 3){|i, j| i * 3 + j + 1}
+		assert_equal Matrix[[4, 5, 6],[7, 8, 9]], m.row2matrix(1..2)
+		assert_equal Matrix[7, 8, 9], m.row2matrix(2)
+		assert_equal m, m.row2matrix(0..4)
+	end
 
 	def test_equal_in_delta
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
