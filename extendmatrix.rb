@@ -388,7 +388,12 @@ class Matrix
 	alias :column_collect! :column!
 
 	#
-	# 
+	# Set a certain column with the values of a Vector
+  # m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+  # m.column= 1, Vector[1, 1, 1], 1..2
+  # m => 1 2 3
+  #      4 1 6
+  #      7 1 9  
 	#
 	def column=(args)
 		m = row_size
