@@ -495,8 +495,7 @@ class Matrix
 		end
 	end #end of Householder module
 
-	# the bidiagonal matrix obtained with 
-	# Householder Bidiagonalization algorithm
+	# the bidiagonal matrix obtained with Householder Bidiagonalization algorithm
 	def bidiagonal 
 		ub, vb = House.bidiag(self)
 		ub.t * self * vb
@@ -534,74 +533,97 @@ class Matrix
 		end
 	end
 
-	def givens(a, b)
-		if b == 0 
-			c = 0; s = 0
-		else
-			if b.abs > a.abs
-				tau = Float(-a)/b; s = 1/Math.sqrt(1+tau**2); c = s * tau
+	module Givens
+		def Givens.givens(a, b)
+			if b == 0 
+				c = 0; s = 0
 			else
-				tau = Float(-b)/a; c = 1/Math.sqrt(1+tau**2); s = c * tau
+				if b.abs > a.abs
+					tau = Float(-a)/b; s = 1/Math.sqrt(1+tau**2); c = s * tau
+				else
+					tau = Float(-b)/a; c = 1/Math.sqrt(1+tau**2); s = c * tau
+				end
 			end
+			return c, s
 		end
-		return c, s
+	
+		# Computes the upper triangular matrix R and the orthogonal matrix Q
+		# where Q^t A = R (MC, Golub, algorithm 5.2.2)
+		def Givens.QR(mat)
+			r = mat.clone
+			m = r.row_size
+			n = r.column_size
+			q = Matrix.I(m)
+			n.times{|j|
+				m-1.downto(j+1){|i|
+					c, s = givens(r[i - 1, j], r[i, j])
+					qt = Matrix.I(m); qt[i-1..i, i-1..i] = Matrix[[c, s],[-s, c]]
+					q *= qt
+					r[i-1..i, j..n-1] = Matrix[[c, -s],[s, c]] * r[i-1..i, j..n-1]}}
+			return r, q
+		end
+
+		def Givens.R(mat)
+			QR(mat)[0]
+		end
+
+		def Givens.Q(mat)
+			QR(mat)[1]
+		end
 	end
 
-	def givensQR
-		q = []
-		mat = self.clone
-		m = row_size - 1
-		n = column_size - 1
-		(n+1).times{|j|
-			m.downto(j+1){|i|
-				c, s = givens(mat[i - 1, j], mat[i, j])
-				qt = Matrix.I(m+1)
-				qt[i-1,i-1] = c; qt[i-1,i] = s
-				qt[i,i-1] = -s; qt[i,i] = c
-				q[q.size] = qt
-				mat[i-1..i, j..n] = Matrix[[c, -s],[s, c]] * mat[i-1..i, j..n]	}}
-		return mat, q
+	def givensR
+		Givens.QR(self)[0]
 	end
 
 	def givensQ
-		r, qt = givensQR
-		q = Matrix.I(row_size)
-		qt.each{|x| q *= x}
-		q
+		Givens.QR(self)[1]
 	end
 
+	module Hessenberg
+		#the matrix must be an upper Hessenberg matrix
+		def Hessenberg.QR(mat)
+			r = mat.clone
+			n = row_size
+			q = Matrix.I(n)
+			for j in (0...n-1)
+				c, s = givens(r[j,j], r[j+1, j])
+				cs = Matrix[[c, s], [-s, c]]
+				q *= Matrix.diag(Matrix.I(j), cs, Matrix.I(n - j - 2))
+				r[j..j+1, j..n-1] = cs.t * r[j..j+1, j..n-1] 
+			end
+			return q, r
+		end
 
-	#the matrix must be an upper Hessenberg matrix
-	def hessenbergQR
-		q = []
-		mat = self.clone
-		n = row_size - 1
-		n.times{|j|
-			c, s = givens(mat[j,j], mat[j+1, j])
-			cs = Matrix[[c, s], [-s, c]]
-			q[j] = Matrix.diag(Matrix.I(j), cs, Matrix.I(n - j - 1))
-			mat[j..j+1, j..n] = cs.t * mat[j..j+1, j..n] }		
-		return mat, q
+		def Hessenberg.Q(mat)
+			QR(mat)[0]
+		end
+
+		def Hessenberg.R(mat)
+			QR(mat)[1]
+		end
 	end
 
 	def hessenbergQ
-		r, qj = hessenbergQR
-		q = Matrix.I(row_size)
-		qj.each{|x| q *= x}
-		q
+		Hessenberg.QR(self)[0]	
+	end
+	
+	def hessenbergR
+		Hessenberg.QR(self)[1]	
 	end
 
 	#Householder Reduction to Hessenberg Form
 	def hessenberg
-		u0 = Matrix.I(row_size)
 		h = self.clone
-		n = row_size - 1
-		(n - 1).times{|k|
-			v, beta = h[k+1..n,k].house #the householder matrice part
-			houseV = Matrix.I(n-k) - beta * (v * v.t) 
+		n = row_size
+		u0 = Matrix.I(n)
+		for k in (0...n - 2)
+			v, beta = h[k+1..n-1, k].house #the householder matrice part
+			houseV = Matrix.I(n-k-1) - beta * (v * v.t) 
 			u0 *= Matrix.diag(Matrix.I(k+1), houseV)
-			h[k+1..n, k..n] = houseV * h[k+1..n, k..n]
-			h[0..n, k+1..n] = h[0..n, k+1..n] * houseV}
+			h[k+1..n-1, k..n-1] = houseV * h[k+1..n-1, k..n-1]
+			h[0..n-1, k+1..n-1] = h[0..n-1, k+1..n-1] * houseV
+		end
 		return h, u0
 	end
 
@@ -616,8 +638,9 @@ class Matrix
 		true
 	end
 
-	def eigenvalQR(eps = 1.0e-10)
+	def eigenvalQR(eps = 1.0e-10, steps = 100)
 		h = self.hessenberg[0]
+		h1 = Matrix[]
 		i = 0
 		loop do
 			h1 = h.houseR * h.houseQ	
@@ -625,11 +648,12 @@ class Matrix
 			print h
 			print "\n"
 			print h1
-			break if diagTol(h1, h, eps)
-			h = h1.clone
+			break if diagTol(h1, h, eps) or steps <= 0
+			h = h1.clone 
+			steps -= 1
 			i += 1
 		end
-		h
+		h1
 	end
 
 	module Jacobi
