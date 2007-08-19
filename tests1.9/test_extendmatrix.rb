@@ -167,27 +167,42 @@ class TestMatrix < Test::Unit::TestCase
 	def test_row2matrix
 		m = Matrix.new(4, 3){|i, j| i * 3 + j + 1}
 		assert_equal Matrix[[4, 5, 6],[7, 8, 9]], m.row2matrix(1..2)
-		assert_equal Matrix[7, 8, 9], m.row2matrix(2)
+		assert_equal Matrix[[7, 8, 9]], m.row2matrix(2)
 		assert_equal m, m.row2matrix(0..4)
+	end
+
+	def test_column2matrix
+		m = Matrix.new(4, 3){|i, j| i * 3 + j + 1}
+		assert_equal Matrix[[2], [5], [8], [11]], m.column2matrix(1)
 	end
 
 	def test_equal_in_delta
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
-		assert_equal true, m.equal_in_delta?(m)
+		assert_equal true, Matrix.equal_in_delta?(m, m)
 		mm = m.clone
 		mm[0,0] += 2
-		assert_equal false, m.equal_in_delta?(mm, 0.001)
-		assert_equal true, m.equal_in_delta?(mm, 2)
+		assert_equal false, Matrix.equal_in_delta?(m, mm, 0.001)
+		assert_equal true, Matrix.equal_in_delta?(m, mm, 2)
+	end
+
+	def test_LU
+		m = Matrix[[1, 4, 7],
+							 [2, 5, 8],
+							 [3, 6, 10]]
+		l = Matrix[[1, 0, 0],[2, 1, 0],[3, 2, 1]]
+		assert_equal l, m.L
+		u = Matrix[[1, 4, 7],[0, -3, -6],[0, 0, 1]]
+		assert_equal u, m.U
 	end
 
 	def test_houseQR
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
-		assert_equal true, m.equal_in_delta?(m.houseQ * m.houseR)
+		assert_equal true, Matrix.equal_in_delta?(m, m.houseQ * m.houseR)
 		q = Matrix[[0.0776, 0.8330, 0.5329,  0.1264], 
 		 					 [0.3104, 0.4512, -0.8048, 0.2286], 
 		  				 [0.5433, 0.0694, 0.0108, -0.8365], 
 			 				 [0.7761, -0.3123, 0.2610, 0.4815]]
-		assert_equal true, m.houseQ.equal_in_delta?(q, 0.0001)
+		assert_equal true, Matrix.equal_in_delta?(m.houseQ, q, 0.0001)
 	end
 
 	def test_bidiagonalization	# MC, Golub, p252, Example 5.4.2
@@ -196,19 +211,19 @@ class TestMatrix < Test::Unit::TestCase
 										[0, 		 	2.246, 	-0.613],
 										[0, 			0, 			0			],
 										[0, 			0, 			0			]]
-		assert_equal true, bidiag.equal_in_delta?(m.bidiagonal, 0.001)
+		assert_equal true, Matrix.equal_in_delta?(bidiag, m.bidiagonal, 0.001)
 	end
 
 	def test_givens	
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
-		assert_equal true, m.equal_in_delta?(m.givensQ * m.givensR, 0.001)
-		assert_equal true, m.equal_in_delta?(Matrix::Givens.Q(m) * Matrix::Givens.R(m), 0.001)
+		assert_equal true, Matrix.equal_in_delta?(m, m.givensQ * m.givensR, 0.001)
+		assert_equal true, Matrix.equal_in_delta?(m ,Matrix::Givens.Q(m) * Matrix::Givens.R(m), 0.001)
 	end
 
 	def test_eigenvalQR
 		m = Matrix.new(3, 3){1} + Matrix.diagonal(2, 2, 2)
 		e = Matrix[[5, 0, 0],[0, 2, 0],[0, 0, 2]]
-		assert_equal true, m.eigenvalQR.equal_in_delta?(e, 1.0e-5)
+		assert_equal true, Matrix.equal_in_delta?(m.eigenvalQR, e, 1.0e-5)
 	end
 end
 

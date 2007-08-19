@@ -240,6 +240,23 @@ class Matrix
 			m
 		end
 
+		#
+		# Tests if all the elements of two matrix are equal in delta
+		#
+		def equal_in_delta?(m0, m1, delta = 1.0e-10)
+			delta = delta.abs
+			mapcar(m0, m1){|x, y| return false if (x < y - delta or x > y + delta)  }
+			true
+		end
+
+		def diag_in_delta(m1, m0, eps)
+		m1.row_size.times{|i|
+			return false if (m1[i,i]-m0[i,i]).abs > eps
+		}
+		true
+	end
+
+
 	end
 
 	# Division by a scalar
@@ -334,13 +351,6 @@ class Matrix
 			return i, vect, range
 		end
 		
-		#
-		# Returns the matrix of rows/columns indicated in 'range'
-		#
-		def MMatrix.rc2matrix(mat, direction, range)
-			a = mat.send(direction, range).to_a
-			Matrix[*a] 
-		end
 	end
 
 	#
@@ -393,7 +403,7 @@ class Matrix
   # m.column= 1, Vector[1, 1, 1], 1..2
   # m => 1 2 3
   #      4 1 6
-  #      7 1 9  
+  #      7 1 9
 	#
 	def column=(args)
 		m = row_size
@@ -403,6 +413,14 @@ class Matrix
 		((v.size + r.begin)..r.entries.last).each {|i| self[i, c] = 0}
 	end
 	
+	#
+	# Set a certain row with the values of a Vector
+  # m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+  # m.row= 0, Vector[0, 0], 1..2
+  # m => 1 0 0
+  #      4 5 6
+  #      7 8 9  
+	#
 	def row=(args)
 		i, val, range = MMatrix.id_vect_range(args, column_size) 	
 		row!(i)[range] = val
@@ -417,60 +435,84 @@ class Matrix
 	end
 	alias :normF :norm_frobenius
 
+	#
+	# Tests if the matrix is empty or not
+	#
 	def empty?
 		@rows.empty? if @rows
 	end
 
+	#
 	# Returns the row/s of matrix as a Matrix 
+	#
 	def row2matrix(r) 
-		MMatrix.rc2matrix(self, :row, r)
+		a = self.send(:row, r).to_a
+		if r.is_a?(Range) and r.entries.size > 1
+			return Matrix[*a]
+		else
+			return Matrix[a]
+		end
 	end
 
+	#
 	# Returns the colomn/s of matrix as a Matrix
+	#
 	def column2matrix(c) 
-		MMatrix.rc2matrix(self, :column, c).t
-	end
-		
-	def equal_in_delta?(mat, delta = 1.0e-10)
-		delta = delta.abs
-		mapcar(self, mat){|x, y| return false if (x < y - delta or x > y + delta)  }
-		true
+		a = self.send(:column, c).to_a
+		if c.is_a?(Range) and c.entries.size > 1
+			return Matrix[*a]
+		else
+			return Matrix[*a.collect{|x| [x]}]
+		end
 	end
 
   module LU
-    def LU.tau(m, k) 
-      t = m.column2matrix(k)
+		#
+		#	Return the Gauss vector, MC, Golub, 3.2.1 Gauss Transformation, p94
+		#
+    def LU.gauss_vector(mat, k) 
+      t = mat.column2matrix(k)
       tk = t[k, 0]
       (0..k).each{|i| t[i, 0] = 0}
       return t if tk == 0
-      (k+1...m.row_size).each{|i| t[i, 0] = t[i, 0].to_f / tk}
+      (k+1...mat.row_size).each{|i| t[i, 0] = t[i, 0].to_f / tk}
       t
     end
 
-    def LU.M(m, k)
-      i = Matrix.I(m.row_size)
-      t = tau(m, k)
+		#
+		# Return the Gauss transformation matrix: M_k = I - tau * e_k^T
+		#
+    def LU.gauss(mat, k)
+      i = Matrix.I(mat.column_size)
+      tau = gauss_vector(mat, k)
       e = i.row2matrix(k)
-      i - t * e
+      i - tau * e
     end
-
-    def LU.gauss(m)
-      a = m.clone
-      (0..m.column_size-2).collect {|i| mi = M(a, i); a = mi * a; mi }
+		
+		#
+		# LU factorization: A = LU 
+		# where L is lower triangular and U is upper triangular
+		#
+    def LU.factorization(mat)
+      u = mat.clone 
+			n = u.column_size
+			i = Matrix.I(n)
+		 	l = i.clone
+      (n-1).times {|k| 
+				mk = gauss(u, k)
+				u = mk * u	# M_{n-1} * ... * M_1 * A = U
+				l += i - mk	# L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
+			}
+			return l, u
     end
   end 
   
-	def U
-		u = self.clone
-		LU.gauss(self).each{|m| u = m * u}
-		u
+	def L
+		LU.factorization(self)[0]
 	end
 
-	def L
-		trans = LU.gauss(self)
-		l = trans[0].inv
-		(1...trans.size).each{|i| p trans[i].inv; l *= trans[i].inv}
-		l
+	def U
+		LU.factorization(self)[1]
 	end
 
 	module House
@@ -652,20 +694,13 @@ class Matrix
 		hessenberg[1]
 	end
 	
-	def diagTol(m1, m0, eps)
-		m1.row_size.times{|i|
-			return false if (m1[i,i]-m0[i,i]).abs > eps
-		}
-		true
-	end
-
 	def eigenvalQR(eps = 1.0e-10, steps = 100)
 		h = self.hessenberg[0]
 		h1 = Matrix[]
 		i = 0
 		loop do
 			h1 = h.houseR * h.houseQ	
-			break if diagTol(h1, h, eps) or steps <= 0
+			break if Matrix.diag_in_delta(h1, h, eps) or steps <= 0
 			h = h1.clone 
 			steps -= 1
 			i += 1
@@ -729,11 +764,11 @@ class Matrix
 		v = Matrix.I(n)
 		eps = tol * a.normF
 		while Jacobi.off(a) > eps
-			print "\neps:#{eps} off:#{Jacobi.off(a)}\n"
-			print a
+			#print "\neps:#{eps} off:#{Jacobi.off(a)}\n"
+			#print a
 			p, q = Jacobi.max(a)
 			c, s = Jacobi.sym_schur2(a, p, q)
-			print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
+			#print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
 			j = Jacobi.J(p, q, c, s, n)
 			a = j.t * a * j
 			v = v * j
