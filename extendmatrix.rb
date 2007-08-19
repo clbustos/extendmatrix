@@ -99,7 +99,9 @@ class Vector
 	
 	alias :t :transpose
 	
+	#
 	# Computes the Householder vector (MC, Golub, p. 210, algorithm 5.1.1)
+	#
 	def house
 		s = self[1..length-1]
 		sigma = s.inner_product(s)
@@ -226,6 +228,9 @@ class Matrix
 
 
 	class << self
+		#
+		# Creates a matrix with the given matrices as diagonal blocks
+		#
 		def diag(*args)
 			dsize = 0
 			sizes = args.collect{|e| x = (e.is_a?(Matrix)) ? e.row_size : 1; dsize += x; x}
@@ -249,22 +254,29 @@ class Matrix
 			true
 		end
 
-		def diag_in_delta(m1, m0, eps)
-		m1.row_size.times{|i|
-			return false if (m1[i,i]-m0[i,i]).abs > eps
-		}
-		true
+		#
+		# Tests if all the diagonal elements of two matrix are equal in delta
+		#
+		def diag_in_delta?(m1, m0, eps = 1.0e-10)
+			n = m1.row_size
+			return false if n != m0.row_size or m1.column_size != m0.column_size
+			n.times{|i|
+				return false if (m1[i,i]-m0[i,i]).abs > eps
+			}
+			true
+		end
 	end
 
-
-	end
-
-	# Division by a scalar
+	#
+	# Returns the matrix divided by a scalar
+	#
 	def quo(v)
 		map {|e| e.quo(v)}
 	end
 
+	#
 	# quo seems always desirable
+	#
 	alias :/ :quo
 
 	def set(m)
@@ -507,16 +519,29 @@ class Matrix
     end
   end 
   
-	def L
-		LU.factorization(self)[0]
-	end
-
+	#
+	# Return the upper triangular matrix of LU factorization
+	# M_{n-1} * ... * M_1 * A = U
+	#
 	def U
 		LU.factorization(self)[1]
 	end
 
-	module House
-		def House.QR(mat) #Householder QR
+	#
+	# Return the lower triangular matrix of LU factorization
+	# L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
+	#
+	def L
+		LU.factorization(self)[0]
+	end
+
+	module Householder
+		#
+		# a QR factorization that uses Householder transformation
+		# Q^T * A = R
+		# MC, Golub & van Loan, pg 224, 5.2.1 Householder QR
+		#
+		def Householder.QR(mat) 
 			h = []
 			a = mat.clone
 			m = a.row_size
@@ -531,13 +556,22 @@ class Matrix
 			h
 		end
 
-		def House.UV(essential, dim, beta)
+		#
+		# From the essential part of Householder vector 
+		# it returns the coresponding upper(U_j)/lower(V_j) matrix
+		#
+		def Householder.bidiagUV(essential, dim, beta)
 			v = Vector.concat(Vector[1], essential)
 			dimv = v.size
 			Matrix.diag(Matrix.I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
 		end
 
-		def House.bidiag(mat) #Householder Bidiagonalization
+		#
+		# Householder Bidiagonalization algorithm. MC, Golub, pg 252, Algorithm 5.4.2
+		# Returns the matrices U_B and V_B such that: U_B^T * A * V_B = B, 
+		# where B is upper bidiagonal.
+		#
+		def Householder.bidiag(mat) 
 			a = mat.clone
 			m = a.row_size
 			n = a.column_size
@@ -547,56 +581,108 @@ class Matrix
 				v, beta = a[j..m-1,j].house
 				a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
 				a[j+1..m-1, j] = v[1..(m-j-1)]
-				ub *= UV(a[j+1..m-1,j], m, beta) #Ub = U_1 * U_2 * ... * U_n
+				ub *= bidiagUV(a[j+1..m-1,j], m, beta) #Ub = U_1 * U_2 * ... * U_n
 				if j < n - 2
 					v, beta = (a[j, j+1..n-1]).house
 					a[j..m-1, j+1..n-1] = a[j..m-1, j+1..n-1] * (Matrix.I(n-j-1) - beta * (v * v.t))
 					a[j, j+2..n-1] = v[1..n-j-2]
-					vb  *= UV(a[j, j+2..n-1], n, beta) #Vb = V_1 * U_2 * ... * V_n-2	
+					vb  *= bidiagUV(a[j, j+2..n-1], n, beta) #Vb = V_1 * U_2 * ... * V_n-2	
 				end	}
 			return ub, vb
 		end
+		
+		#
+		#Householder Reduction to Hessenberg Form
+		#
+		def Householder.toHessenberg(mat)
+			h = mat.clone
+			n = h.row_size
+			u0 = Matrix.I(n)
+			for k in (0...n - 2)
+				v, beta = h[k+1..n-1, k].house #the householder matrice part
+				houseV = Matrix.I(n-k-1) - beta * (v * v.t) 
+				u0 *= Matrix.diag(Matrix.I(k+1), houseV)
+				h[k+1..n-1, k..n-1] = houseV * h[k+1..n-1, k..n-1]
+				h[0..n-1, k+1..n-1] = h[0..n-1, k+1..n-1] * houseV
+			end
+			return h, u0
+		end
+
+
 	end #end of Householder module
 
-	# the bidiagonal matrix obtained with Householder Bidiagonalization algorithm
+	#
+	# Returns the upper bidiagonal matrix obtained with Householder Bidiagonalization algorithm
+	#
 	def bidiagonal 
-		ub, vb = House.bidiag(self)
+		ub, vb = Householder.bidiag(self)
 		ub.t * self * vb
 	end
 
-	#householder Q = H_1 * H_2 * H_3 * ... * H_n
+	#
+	# Returns the orthogonal matrix Q of Householder QR factorization
+	# where Q = H_1 * H_2 * H_3 * ... * H_n, 
+	#
 	def houseQ 
-		h = House.QR(self)
+		h = Householder.QR(self)
     q = h[0] 
     (1...h.size).each{|i| q *= h[i]} 
     q
   end
 
-  # R = H_n * H_n-1 * ... * H_1 * A
+  #
+	# Returns the matrix R of Householder QR factorization
+	# R = H_n * H_n-1 * ... * H_1 * A is an upper triangular matrix
+	#
   def houseR
-    h = House.QR(self)
+    h = Householder.QR(self)
     r = self.clone
     h.size.times{|i| r = h[i] * r}
     r
   end
 
+	#
 	# Modified Gram Schmidt QR factorization (MC, Golub, p. 232)
+	# A = Q_1 * R_1
+	#
 	def gram_schmidt
-		r = clone
-		q = clone
+		a = clone
 		n = column_size
 		m = row_size
+		q = Matrix.new(m, n){0}
+		r = Matrix.zero(n)
 		for k in 0...n
-			r[k,k] = self[0...m, k].norm
-			q[0...m, k] = self[0...m, k] / r[k, k]
+			r[k,k] = a[0...m, k].norm
+			q[0...m, k] = a[0...m, k] / r[k, k]
 			for j in (k+1)...n
-				r[k, j] = q[0...m, k].t * self[0...m, j]
-				self[0...m, j] -= q[0...m, k] * r[k, j]
+				r[k, j] = q[0...m, k].t * a[0...m, j]
+				a[0...m, j] -= q[0...m, k] * r[k, j]
 			end
 		end
+		return q, r
+	end
+	
+	#
+	# Returns the Q_1 matrix of Modified Gram Schmidt algorithm
+	# Q_1 has orthonormal columns
+	#
+	def gram_schmidtQ
+		gram_schmidt[0]
 	end
 
+	#
+	# Returns the R_1 upper triangular matrix of Modified Gram Schmidt algorithm
+	#
+	def gram_schmidtR
+		gram_schmidt[1]
+	end
+
+
 	module Givens
+		#
+		# Returns the values "c and s" of a Given rotation
+		# MC, Golub, pg 216, Alghorithm 5.1.3
+		#
 		def Givens.givens(a, b)
 			if b == 0 
 				c = 0; s = 0
@@ -610,8 +696,11 @@ class Matrix
 			return c, s
 		end
 	
+		# 
+		# a QR factorization using Givens rotation
 		# Computes the upper triangular matrix R and the orthogonal matrix Q
-		# where Q^t A = R (MC, Golub, algorithm 5.2.2)
+		# where Q^t A = R (MC, Golub, p227 algorithm 5.2.2)
+		#
 		def Givens.QR(mat)
 			r = mat.clone
 			m = r.row_size
@@ -626,81 +715,72 @@ class Matrix
 			return r, q
 		end
 
-		def Givens.R(mat)
-			QR(mat)[0]
-		end
-
-		def Givens.Q(mat)
-			QR(mat)[1]
-		end
 	end
-
+	
+	#
+	# Returns the upper triunghiular matrix R of a Givens QR factorization
+	#
 	def givensR
 		Givens.QR(self)[0]
 	end
 
+	#
+	# Returns the orthogonal matrix Q of Givens QR factorization.
+	# Q = G_1 * ... * G_t where G_j is the j'th Givens rotation 
+	# and 't' is the total number of rotations 
+	#
 	def givensQ
 		Givens.QR(self)[1]
 	end
 
 	module Hessenberg
-		#the matrix must be an upper Hessenberg matrix
+		#
+		#	the matrix must be an upper R^(n x n) Hessenberg matrix
+		#
 		def Hessenberg.QR(mat)
 			r = mat.clone
-			n = row_size
+			n = r.row_size
 			q = Matrix.I(n)
 			for j in (0...n-1)
-				c, s = givens(r[j,j], r[j+1, j])
+				c, s = Givens.givens(r[j,j], r[j+1, j])
 				cs = Matrix[[c, s], [-s, c]]
 				q *= Matrix.diag(Matrix.I(j), cs, Matrix.I(n - j - 2))
 				r[j..j+1, j..n-1] = cs.t * r[j..j+1, j..n-1] 
 			end
 			return q, r
 		end
-
-		def Hessenberg.Q(mat)
-			QR(mat)[0]
-		end
-
-		def Hessenberg.R(mat)
-			QR(mat)[1]
-		end
 	end
 
+	#
+	# Returns the orthogonal matrix Q of Hessenberg QR factorization
+	# Q = G_1 *...* G_(n-1) where G_j is the Givens rotation G_j = G(j, j+1, omega_j)
+	#
 	def hessenbergQ
 		Hessenberg.QR(self)[0]	
 	end
 	
+	#
+	# Returns the upper triunghiular matrix R of a Hessenberg QR factorization
+	#
 	def hessenbergR
 		Hessenberg.QR(self)[1]	
 	end
 
-	#Householder Reduction to Hessenberg Form
-	def hessenberg
-		h = self.clone
-		n = row_size
-		u0 = Matrix.I(n)
-		for k in (0...n - 2)
-			v, beta = h[k+1..n-1, k].house #the householder matrice part
-			houseV = Matrix.I(n-k-1) - beta * (v * v.t) 
-			u0 *= Matrix.diag(Matrix.I(k+1), houseV)
-			h[k+1..n-1, k..n-1] = houseV * h[k+1..n-1, k..n-1]
-			h[0..n-1, k+1..n-1] = h[0..n-1, k+1..n-1] * houseV
-		end
-		return h, u0
+	def hessenberg_form_H
+		Householder.toHessenberg(self)[0]
 	end
 
-	def hessenbergU0
-		hessenberg[1]
+	def hessenberg_form_U0
+		Householder.toHessenberg(self)[1]
 	end
 	
 	def eigenvalQR(eps = 1.0e-10, steps = 100)
-		h = self.hessenberg[0]
+		h = self.hessenberg_form_U0
 		h1 = Matrix[]
 		i = 0
 		loop do
 			h1 = h.houseR * h.houseQ	
-			break if Matrix.diag_in_delta(h1, h, eps) or steps <= 0
+			break if Matrix.diag_in_delta?(h1, h, eps) or steps <= 0
 			h = h1.clone 
 			steps -= 1
 			i += 1

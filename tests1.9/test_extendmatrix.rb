@@ -176,6 +176,20 @@ class TestMatrix < Test::Unit::TestCase
 		assert_equal Matrix[[2], [5], [8], [11]], m.column2matrix(1)
 	end
 
+	def test_diag
+		m1 = Matrix[[1]]
+		m2 = Matrix[[2, 0], [0, 3]]
+		m3 = Matrix[[4, 0, 0], [0, 5, 0], [0, 0, 6]]
+		a1 = Matrix.new(6, 6){|i, j| i == j ? i + 1: 0}
+		assert_equal a1, Matrix.diag(m1, m2, m3)
+		assert_equal m2, Matrix.diag(m2)
+		a2 = Matrix[[2, 0, 0, 0],
+							 [0, 3, 0, 0],
+							 [0, 0, 2, 0],
+							 [0, 0, 0, 3]]
+		assert_equal a2, Matrix.diag(m2, m2)
+	end
+
 	def test_equal_in_delta
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
 		assert_equal true, Matrix.equal_in_delta?(m, m)
@@ -183,6 +197,12 @@ class TestMatrix < Test::Unit::TestCase
 		mm[0,0] += 2
 		assert_equal false, Matrix.equal_in_delta?(m, mm, 0.001)
 		assert_equal true, Matrix.equal_in_delta?(m, mm, 2)
+	end
+
+	def test_diag_in_delta
+		assert_equal false, Matrix.diag_in_delta?(Matrix.I(5), Matrix.new(4, 4){|i, j| i + j})
+		m  = Matrix.new(5, 5){|i, j| i == j ? 1 + 0.001 * (i+1) : i + j}
+		assert_equal true, Matrix.diag_in_delta?(Matrix.I(5), m, 0.01)
 	end
 
 	def test_LU
@@ -195,6 +215,25 @@ class TestMatrix < Test::Unit::TestCase
 		assert_equal u, m.U
 	end
 
+	def test_L 
+	# e.g.: MC, Golub, 3.2 LU factorization, pg 94
+		m = Matrix[[3, 5],
+							 [6, 7]]
+		l = Matrix[[1, 0],
+							 [2, 1]]
+		assert_equal l, m.L
+	end
+
+	def test_U
+	# e.g.: MC, Golub, 3.2 LU factorization, pg 94
+		m = Matrix[[3, 5],
+							 [6, 7]]
+		u = Matrix[[3, 5],
+							 [0, -3]]
+		assert_equal u, m.U
+	
+	end
+
 	def test_houseQR
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
 		assert_equal true, Matrix.equal_in_delta?(m, m.houseQ * m.houseR)
@@ -203,6 +242,15 @@ class TestMatrix < Test::Unit::TestCase
 		  				 [0.5433, 0.0694, 0.0108, -0.8365], 
 			 				 [0.7761, -0.3123, 0.2610, 0.4815]]
 		assert_equal true, Matrix.equal_in_delta?(m.houseQ, q, 0.0001)
+	end
+
+	def test_houseR
+		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+		r = Matrix[[12.88409, 14.59162, 16.29916], 
+							 [       0,  1.04131, 2.082630],
+							 [       0,        0,        0], 
+							 [       0,        0,        0]]
+		assert_equal true, Matrix.equal_in_delta?(r, m.houseR, 1.0e-5)
 	end
 
 	def test_bidiagonalization	# MC, Golub, p252, Example 5.4.2
@@ -214,15 +262,51 @@ class TestMatrix < Test::Unit::TestCase
 		assert_equal true, Matrix.equal_in_delta?(bidiag, m.bidiagonal, 0.001)
 	end
 
+	def test_gram_schmidt
+		m = Matrix[[1,     1],
+							 [0.001, 0],
+							 [0, 0.001]]
+		gsQ = Matrix[[    1,         0],
+								 [0.001, -0.707107],
+								 [    0,  0.707100]]
+		assert_equal true, Matrix.equal_in_delta?(gsQ, m.gram_schmidt[0], 0.001)
+		assert_equal true, Matrix.equal_in_delta?(m,m.gram_schmidt[0] * m.gram_schmidt[1], 1.0e-5)
+	end
+	
 	def test_givens	
 		m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
 		assert_equal true, Matrix.equal_in_delta?(m, m.givensQ * m.givensR, 0.001)
-		assert_equal true, Matrix.equal_in_delta?(m ,Matrix::Givens.Q(m) * Matrix::Givens.R(m), 0.001)
+	end
+
+	def test_hessenbergQR
+		hess = Matrix[[1, 2, 1, 2, 1], 
+									[1, 3, 2, 3, 4],
+									[0, 2, 4, 3, 5],
+									[0, 0, 1, 4, 3],
+									[0, 0, 0, 6, 1]]
+		hessR = hess.hessenbergR
+		r = Matrix[[1.41421,  3.53553,  2.12132,  3.53553,  3.53553],
+							 [      0, -2.12132, -4.00693, -3.06412, -5.42115], 
+							 [      0,        0, -1.20185, -3.51310, -2.31125], 
+							 [      0,        0,        0, -6.30628, -1.54912], 
+							 [      0,        0,        0,        0,  1.53929]]
+
+		assert_equal true, Matrix.equal_in_delta?(r, hessR, 1.0e-5)
+		assert_equal true, Matrix.equal_in_delta?(hessR, hess.hessenbergQ.t * hess, 1.0e-5)
+	end
+
+	def test_hessenberg_form
+		m = Matrix[[1, 5, 7],[3, 0, 6],[4, 3, 1]]
+		print m.hessenberg_form_U0
+		print m.hessenberg_form_H
 	end
 
 	def test_eigenvalQR
 		m = Matrix.new(3, 3){1} + Matrix.diagonal(2, 2, 2)
 		e = Matrix[[5, 0, 0],[0, 2, 0],[0, 0, 2]]
+		print "\neigenval:\n"
+		print m.eigenvalQR
+		print e
 		assert_equal true, Matrix.equal_in_delta?(m.eigenvalQR, e, 1.0e-5)
 	end
 end
