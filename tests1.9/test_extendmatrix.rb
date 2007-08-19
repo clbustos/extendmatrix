@@ -297,18 +297,39 @@ class TestMatrix < Test::Unit::TestCase
 
 	def test_hessenberg_form
 		m = Matrix[[1, 5, 7],[3, 0, 6],[4, 3, 1]]
-		print m.hessenberg_form_U0
-		print m.hessenberg_form_H
+		h = Matrix[[1, 8.6, -0.2],[5, 4.96, -0.72],[0, 2.28, -3.96]]
+		assert_equal true, Matrix.equal_in_delta?(h, m.hessenberg_form_H, 0.001)
 	end
 
-	def test_eigenvalQR
+	def test_realSchur
 		m = Matrix.new(3, 3){1} + Matrix.diagonal(2, 2, 2)
 		e = Matrix[[5, 0, 0],[0, 2, 0],[0, 0, 2]]
-		print "\neigenval:\n"
-		print m.eigenvalQR
-		print e
-		assert_equal true, Matrix.equal_in_delta?(m.eigenvalQR, e, 1.0e-5)
+		assert_equal true, Matrix.diag_in_delta?(m.realSchur, e, 1.0e-5)
 	end
+
+	def test_cJacobi
+		m = Matrix[[3, 1, 1],[1, 3, 1],[1, 1, 3]]
+		v = Matrix[[2, 0, 0],[0, 5, 0],[0, 0, 2]]
+		assert_equal true, Matrix.diag_in_delta?(v, m.cJacobiA, 0.01)
+		a = Matrix[[1, 1, 1, 4],
+							 [1, 1, 0, 5],
+							 [1, 0, 1, 4],
+							 [4, 5, 4, 1]]
+		e = Matrix[[-0.26828, 0, 0, 0], [0, -5.97550, 0, 0], [0, 0, 1.01373, 0], [0, 0, 0, 9.23004]]
+		assert_equal true, Matrix.diag_in_delta?(e, a.cJacobiA, 1.0e-5)
+	end
+
+=begin
+	def test_eigenvaluesJacobi
+		a = Matrix[[1, 1, 1, 4],
+							 [1, 1, 0, 5],
+							 [1, 0, 1, 4],
+							 [4, 5, 4, 1]]
+		eigenvalues = [-0.268280385530705, -5.97550058143538, 1.01373431639199, 9.2300466505741]
+		p a.eigenvaluesJacobi
+
+		assert_equal eigenvalues,  a.eigenvaluesJacobi
+=end
 end
 
 

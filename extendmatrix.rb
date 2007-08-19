@@ -766,20 +766,23 @@ class Matrix
 		Hessenberg.QR(self)[1]	
 	end
 
+	#
+	# Return an upper Hessenberg matrix obtained with Householder reduction to Hessenberg Form algorithm 
+	#
 	def hessenberg_form_H
 		Householder.toHessenberg(self)[0]
 	end
 
-	def hessenberg_form_U0
-		Householder.toHessenberg(self)[1]
-	end
-	
-	def eigenvalQR(eps = 1.0e-10, steps = 100)
-		h = self.hessenberg_form_U0
+	#
+	# The real Schur decomposition. 
+	# The eigenvalues are aproximated in diagonal elements of the real Schur decomposition matrix 
+	#
+	def realSchur(eps = 1.0e-10, steps = 100)
+		h = self.hessenberg_form_H
 		h1 = Matrix[]
 		i = 0
 		loop do
-			h1 = h.houseR * h.houseQ	
+			h1 = h.hessenbergR * h.hessenbergQ
 			break if Matrix.diag_in_delta?(h1, h, eps) or steps <= 0
 			h = h1.clone 
 			steps -= 1
@@ -788,7 +791,11 @@ class Matrix
 		h1
 	end
 
+
 	module Jacobi
+		#
+		# Returns the nurm of the off-diagonal element
+		#
 		def Jacobi.off(a)
 			n = a.row_size
 			sum = 0
@@ -796,6 +803,9 @@ class Matrix
 			Math.sqrt(sum)
 		end
 
+		#
+		# Returns the index pair (p, q) with 1<= p < q <= n and A[p, q] is the maximum in absolute value
+		#
 		def Jacobi.max(a)
 			n = a.row_size
 			max = 0
@@ -812,6 +822,9 @@ class Matrix
 			return p, q
 		end
 
+		#
+		# Compute the cosine-sine pair (c, s) for the element A[p, q]
+		#
 		def Jacobi.sym_schur2(a, p, q)
 			if a[p, q] != 0
 				tau = Float(a[q, q] - a[p, p])/(2 * a[p, q])
@@ -829,6 +842,9 @@ class Matrix
 			return c, s
 		end
 
+		#
+		# Returns the Jacobi rotation matrix
+		#
 		def Jacobi.J(p, q, c, s, n)
 			j = Matrix.I(n)
 			j[p,p] = c; j[p, q] = s
@@ -837,15 +853,15 @@ class Matrix
 		end
 	end
 
+	# 
 	# Classical Jacobi 8.4.3 Golub & van Loan
+	#
 	def cJacobi(tol = 1.0e-10)
 		a = self.clone
 		n = row_size
 		v = Matrix.I(n)
 		eps = tol * a.normF
 		while Jacobi.off(a) > eps
-			#print "\neps:#{eps} off:#{Jacobi.off(a)}\n"
-			#print a
 			p, q = Jacobi.max(a)
 			c, s = Jacobi.sym_schur2(a, p, q)
 			#print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
@@ -855,4 +871,29 @@ class Matrix
 		end
 		return a, v
 	end
+
+	#
+	# Returns the aproximation matrix computed with Classical Jacobi algorithm
+	# The aproximate eigenvalues values are in the diagonal of the matrix A
+	#
+	def cJacobiA(tol = 1.0e-10)
+		cJacobi(tol)[0]
+	end
+
+	#
+	# returns the array if eigenvalues aproximated with Clasical Jacobi algorithm
+	#
+	def eigenvaluesJacobi
+		a = cJacobiA
+		(0...row_size).collect{|i| a[i, i]}
+	end
+
+	#
+	# Returns the orthogonal matrix obtained with the Jacobi eigenvalue algorithm. The columns of V are the eigenvector
+	#
+	def cJacobiV(tol = 1.0e-10)
+		cJacobi(tol)[1]
+	end
 end
+
+
