@@ -15,7 +15,8 @@ class Vector
 	alias :length :size
 	alias :index :[]
 	#
-	#	Returns the value or the values Vector
+	#	Returns the value of an index vector or
+	#	a Vector with the values of a range
 	# v = Vector[1, 2, 3, 4]
 	#	v[0] => 1
 	#	v[0..2] => Vector[1, 2, 3]
@@ -218,11 +219,9 @@ class Matrix
 	# in Ruby1.9 is working 'funcall'
 	#
 	def initialize_old(init_method, *argv)
-		rubyVersion = $-I[0][-3..-1]
-		case rubyVersion
-		when "1.8"
+		if RUBY_VERSION < "1.9.0"
 			self.send(init_method, *argv) # in Ruby1.8
-		when "1.9"
+		else
 			self.funcall(init_method, *argv) # in Ruby1.9
 		end
 	end
