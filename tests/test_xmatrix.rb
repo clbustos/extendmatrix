@@ -346,16 +346,14 @@ class TestMatrix < Test::Unit::TestCase
 		assert_equal true, Matrix.diag_in_delta?(e, a.cJacobiA, 1.0e-5)
 	end
 
-=begin
+
 	def test_eigenvaluesJacobi
 		a = Matrix[[1, 1, 1, 4],
 							 [1, 1, 0, 5],
 							 [1, 0, 1, 4],
 							 [4, 5, 4, 1]]
-		eigenvalues = [-0.268280385530705, -5.97550058143538, 1.01373431639199, 9.2300466505741]
-		p a.eigenvaluesJacobi
-
-		assert_equal eigenvalues,  a.eigenvaluesJacobi
-=end
+		eigens = Vector[-0.268280385530705, -5.97550058143538, 1.01373431639199, 9.2300466505741]
+		assert_in_delta 0, (eigens - a.eigenvaluesJacobi).norm, 1.0e-10
+	end
 end
 

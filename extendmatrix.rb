@@ -979,23 +979,25 @@ class Matrix
 	end
 
 	#
-	# Returns the aproximation matrix computed with Classical Jacobi algorithm
-	# The aproximate eigenvalues values are in the diagonal of the matrix A
+	# Returns the aproximation matrix computed with Classical Jacobi algorithm.
+	# The aproximate eigenvalues values are in the diagonal of the matrix A.
 	#
 	def cJacobiA(tol = 1.0e-10)
 		cJacobi(tol)[0]
 	end
 
 	#
-	# returns the array if eigenvalues aproximated with Clasical Jacobi algorithm
+	# Returns a Vector with the eigenvalues aproximated values. 
+	# The eigenvalues are computed with the Classic Jacobi Algorithm.
 	#
 	def eigenvaluesJacobi
 		a = cJacobiA
-		(0...row_size).collect{|i| a[i, i]}
+		Vector[*(0...row_size).collect{|i| a[i, i]}]
 	end
 
 	#
-	# Returns the orthogonal matrix obtained with the Jacobi eigenvalue algorithm. The columns of V are the eigenvector
+	# Returns the orthogonal matrix obtained with the Jacobi eigenvalue algorithm. 
+	# The columns of V are the eigenvector.
 	#
 	def cJacobiV(tol = 1.0e-10)
 		cJacobi(tol)[1]
