@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html>
+<head>
+  <title>factorization (Matrix::LU)</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="../../.././rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body class="standalone-code">
+  <pre><span class="ruby-comment cmt"># File extendmatrix.rb, line 614</span>
+    <span class="ruby-keyword kw">def</span> <span class="ruby-constant">LU</span>.<span class="ruby-identifier">factorization</span>(<span class="ruby-identifier">mat</span>)
+      <span class="ruby-identifier">u</span> = <span class="ruby-identifier">mat</span>.<span class="ruby-identifier">clone</span> 
+                        <span class="ruby-identifier">n</span> = <span class="ruby-identifier">u</span>.<span class="ruby-identifier">column_size</span>
+                        <span class="ruby-identifier">i</span> = <span class="ruby-constant">Matrix</span>.<span class="ruby-constant">I</span>(<span class="ruby-identifier">n</span>)
+                      <span class="ruby-identifier">l</span> = <span class="ruby-identifier">i</span>.<span class="ruby-identifier">clone</span>
+      (<span class="ruby-identifier">n</span><span class="ruby-operator">-</span><span class="ruby-value">1</span>).<span class="ruby-identifier">times</span> {<span class="ruby-operator">|</span><span class="ruby-identifier">k</span><span class="ruby-operator">|</span> 
+                                <span class="ruby-identifier">mk</span> = <span class="ruby-identifier">gauss</span>(<span class="ruby-identifier">u</span>, <span class="ruby-identifier">k</span>)
+                                <span class="ruby-identifier">u</span> = <span class="ruby-identifier">mk</span> <span class="ruby-operator">*</span> <span class="ruby-identifier">u</span>  <span class="ruby-comment cmt"># M_{n-1} * ... * M_1 * A = U</span>
+                                <span class="ruby-identifier">l</span> <span class="ruby-operator">+=</span> <span class="ruby-identifier">i</span> <span class="ruby-operator">-</span> <span class="ruby-identifier">mk</span> <span class="ruby-comment cmt"># L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e</span>
+                        }
+                        <span class="ruby-keyword kw">return</span> <span class="ruby-identifier">l</span>, <span class="ruby-identifier">u</span>
+    <span class="ruby-keyword kw">end</span></pre>
+</body>
+</html>

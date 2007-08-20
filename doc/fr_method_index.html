@@ -1,0 +1,162 @@
+
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--
+
+    Methods
+
+  -->
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Methods</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" />
+  <base target="docwin" />
+</head>
+<body>
+<div id="index">
+  <h1 class="section-bar">Methods</h1>
+  <div id="index-entries">
+    <a href="classes/Vector.html#M000015">/ (Vector)</a><br />
+    <a href="classes/Matrix.html#M000034">/ (Matrix)</a><br />
+    <a href="classes/Matrix/Jacobi.html#M000089">J (Matrix::Jacobi)</a><br />
+    <a href="classes/Matrix.html#M000057">L (Matrix)</a><br />
+    <a href="classes/Matrix/Householder.html#M000075">QR (Matrix::Householder)</a><br />
+    <a href="classes/Matrix/Givens.html#M000082">QR (Matrix::Givens)</a><br />
+    <a href="classes/Matrix/Hessenberg.html#M000074">QR (Matrix::Hessenberg)</a><br />
+    <a href="classes/Matrix.html#M000056">U (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000026">[] (Matrix)</a><br />
+    <a href="classes/Vector.html#M000003">[] (Vector)</a><br />
+    <a href="classes/Vector.html#M000004">[]= (Vector)</a><br />
+    <a href="classes/Matrix.html#M000027">[]= (Matrix)</a><br />
+    <a href="classes/Matrix/Householder.html#M000077">bidiag (Matrix::Householder)</a><br />
+    <a href="classes/Matrix/Householder.html#M000076">bidiagUV (Matrix::Householder)</a><br />
+    <a href="classes/Matrix.html#M000058">bidiagonal (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000070">cJacobi (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000071">cJacobiA (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000073">cJacobiV (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000028">clone (Matrix)</a><br />
+    <a href="classes/Vector.html#M000006">collect! (Vector)</a><br />
+    <a href="classes/Matrix.html#M000039">cols_len (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000046">column! (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000055">column2matrix (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000048">column= (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000045">column_collect (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000047">column_collect! (Matrix)</a><br />
+    <a href="classes/Vector.html#M000005">concat (Vector)</a><br />
+    <a href="classes/Matrix/MMatrix.html#M000079">default_block (Matrix::MMatrix)</a><br />
+    <a href="classes/Matrix.html#M000030">diag (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000032">diag_in_delta? (Matrix)</a><br />
+    <a href="classes/Vector.html#M000007">each (Vector)</a><br />
+    <a href="classes/Matrix.html#M000041">each (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000072">eigenvaluesJacobi (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000053">empty? (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000031">equal_in_delta? (Matrix)</a><br />
+    <a href="classes/Matrix/LU.html#M000085">factorization (Matrix::LU)</a><br />
+    <a href="classes/Matrix/LU.html#M000084">gauss (Matrix::LU)</a><br />
+    <a href="classes/Matrix/LU.html#M000083">gauss_vector (Matrix::LU)</a><br />
+    <a href="classes/Matrix/Givens.html#M000081">givens (Matrix::Givens)</a><br />
+    <a href="classes/Matrix.html#M000065">givensQ (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000064">givensR (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000061">gram_schmidt (Matrix)</a><br />
+    <a href="classes/Vector.html#M000021">gram_schmidt (Vector)</a><br />
+    <a href="classes/Matrix.html#M000062">gram_schmidtQ (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000063">gram_schmidtR (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000066">hessenbergQ (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000067">hessenbergR (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000068">hessenberg_form_H (Matrix)</a><br />
+    <a href="classes/Vector.html#M000018">house (Vector)</a><br />
+    <a href="classes/Matrix.html#M000059">houseQ (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000060">houseR (Matrix)</a><br />
+    <a href="classes/Matrix/MMatrix.html#M000080">id_vect_range (Matrix::MMatrix)</a><br />
+    <a href="classes/Matrix.html#M000029">initialize_copy (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000025">initialize_old (Matrix)</a><br />
+    <a href="classes/Array.html#M000023">map (Array)</a><br />
+    <a href="files/mapcar_rb.html#M000002">map (mapcar.rb)</a><br />
+    <a href="files/mapcar_rb.html#M000001">mapcar (mapcar.rb)</a><br />
+    <a href="classes/Vector.html#M000008">max (Vector)</a><br />
+    <a href="classes/Matrix/Jacobi.html#M000087">max (Matrix::Jacobi)</a><br />
+    <a href="classes/Matrix.html#M000038">max_len_column (Matrix)</a><br />
+    <a href="classes/Vector.html#M000009">min (Vector)</a><br />
+    <a href="classes/Matrix.html#M000024">new (Matrix)</a><br />
+    <a href="classes/Vector.html#M000010">norm (Vector)</a><br />
+    <a href="classes/Matrix.html#M000050">norm (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000052">normF (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000051">norm_frobenius (Matrix)</a><br />
+    <a href="classes/Vector.html#M000011">norm_inf (Vector)</a><br />
+    <a href="classes/Vector.html#M000020">normalize (Vector)</a><br />
+    <a href="classes/Matrix/Jacobi.html#M000086">off (Matrix::Jacobi)</a><br />
+    <a href="classes/Vector.html#M000019">proj (Vector)</a><br />
+    <a href="classes/Matrix.html#M000033">quo (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000069">realSchur (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000043">row! (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000054">row2matrix (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000049">row= (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000042">row_collect (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000044">row_collect! (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000035">set (Matrix)</a><br />
+    <a href="classes/Vector.html#M000012">slice (Vector)</a><br />
+    <a href="classes/Vector.html#M000014">slice= (Vector)</a><br />
+    <a href="classes/Vector.html#M000013">slice_set (Vector)</a><br />
+    <a href="classes/Vector/Norm.html#M000022">sqnorm (Vector::Norm)</a><br />
+    <a href="classes/Matrix/Jacobi.html#M000088">sym_schur2 (Matrix::Jacobi)</a><br />
+    <a href="classes/Vector.html#M000017">t (Vector)</a><br />
+    <a href="classes/TestMatrix.html#M000112">test_L (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000111">test_LU (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000113">test_U (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000116">test_bidiagonalization (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000122">test_cJacobi (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000126">test_collect (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000095">test_cols_len (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000107">test_column2matrix (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000102">test_column= (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000099">test_column_collect (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000101">test_column_collect! (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000125">test_concat (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000108">test_diag (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000110">test_diag_in_delta (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000096">test_each (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000127">test_each (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000123">test_eigenvaluesJacobi (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000105">test_empty (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000109">test_equal_in_delta (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000118">test_givens (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000117">test_gram_schmidt (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000119">test_hessenbergQR (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000120">test_hessenberg_form (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000114">test_houseQR (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000115">test_houseR (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000090">test_id (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000091">test_id= (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000128">test_max (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000094">test_max_len_column (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000129">test_min (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000130">test_norm (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000104">test_norm (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000136">test_norm_inf (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000131">test_p_norm1 (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000132">test_p_norm2 (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000133">test_p_norm3 (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000134">test_p_norm4 (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000121">test_realSchur (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000097">test_row! (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000106">test_row2matrix (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000103">test_row= (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000098">test_row_collect (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000100">test_row_collect! (TestMatrix)</a><br />
+    <a href="classes/TestMatrix.html#M000092">test_set (TestMatrix)</a><br />
+    <a href="classes/TestVector.html#M000135">test_setValue (TestVector)</a><br />
+    <a href="classes/TestVector.html#M000124">test_setvalue (TestVector)</a><br />
+    <a href="classes/TestMatrix.html#M000093">test_wrap (TestMatrix)</a><br />
+    <a href="classes/Matrix/Householder.html#M000078">toHessenberg (Matrix::Householder)</a><br />
+    <a href="classes/Matrix.html#M000040">to_s (Matrix)</a><br />
+    <a href="classes/Vector.html#M000016">transpose (Vector)</a><br />
+    <a href="classes/Matrix.html#M000037">wrap= (Matrix)</a><br />
+    <a href="classes/Matrix.html#M000036">wraplate (Matrix)</a><br />
+  </div>
+</div>
+</body>
+</html>
