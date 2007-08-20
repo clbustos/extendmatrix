@@ -6,6 +6,17 @@ require 'extendmatrix'
 class TestVector < Test::Unit::TestCase
 	@@v = Vector.[](1, 2, 3, 4)
 
+	def test_setvalue
+		v = @@v.clone
+		v[1..2] = Vector[9, 9, 9, 9, 9]
+		assert_equal Vector[1, 9, 9, 4], v
+	end
+	
+	def test_concat
+		assert_equal Vector[1, 2, 3], Vector.concat(Vector[1], Vector[2, 3])
+		assert_equal Vector[1, 2, 3, 4, 5], Vector.concat(Vector[1], Vector[2, 3], Vector[4, 5])
+	end
+
 	def test_collect
 		v = @@v.clone
 		assert_equal Vector.[](1, 4, 9, 16), v.collect!{|i| i * i}
@@ -65,6 +76,22 @@ end
 
 class TestMatrix < Test::Unit::TestCase
 	
+	def test_id
+		m = Matrix.new(4, 3){|i, j| i * 3 + j}
+		assert_equal 5, m[1, 2]
+		assert_equal Vector[10, 11], m[3, 1..2] 
+		assert_equal Matrix[[0, 1, 2], [3, 4, 5]], m[0..1, 0..2]
+	end
+	
+	def test_id
+		m = Matrix.new(3, 3){|i, j| i * 3 + j}
+		m[1, 2] = 9
+		m[1, 1..2] = Vector[8, 8]
+		assert_equal Matrix[[0, 1, 2], [3, 8, 8], [6, 7, 8]], m
+		m[0..1, 0..1] = Matrix[[0, 0, 0], [0, 0, 0]]
+		assert_equal Matrix[[0, 0, 2], [0, 0, 8], [6, 7, 8]], m
+	end
+
 	def test_set
 		m = Matrix[[1, 2, 222], [2, 33, 4]]
 		n = Matrix.new(2,3)

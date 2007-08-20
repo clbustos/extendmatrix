@@ -14,6 +14,12 @@ class Vector
 
 	alias :length :size
 	alias :index :[]
+	#
+	#	Returns the value or the values Vector
+	# v = Vector[1, 2, 3, 4]
+	#	v[0] => 1
+	#	v[0..2] => Vector[1, 2, 3]
+	#
 	def [](i)
 		case i
 		when Range
@@ -23,10 +29,15 @@ class Vector
 		end	
 	end
 
+	#
+	# Sets a vector value/(range of values) with a new value/(values from a vector)
+	# v = Vector[1, 2, 3]
+	# v[2] = 9 => Vector[1, 2, 9]
+	# v[1..2] = Vector[9, 9, 9, 9, 9] => v: Vector[1, 9, 9]
+	#
 	def []=(i, v)
 		case i
 		when Range
-			#i.each{|e| self[e] = v[e - i.begin]}
 			(self.size..i.begin - 1).each{|e| self[e] = 0} # self.size must be in the first place because the size of self can be modified 
 			[v.size, i.entries.size].min.times {|e| self[e + i.begin] = v[e]}
 			(v.size + i.begin .. i.end).each {|e| self[e] = 0}
@@ -36,6 +47,9 @@ class Vector
 	end
 
 	class << self
+		#
+		# Returns a concatenated Vector
+		#
 		def concat(*args)
 			v = []
 			args.each{|x| v += x.to_a}
@@ -43,33 +57,53 @@ class Vector
 		end
 	end
 
+	#
+	# Changes the elements of vector and returns a Vector
+	#
 	def collect! 
 		els = @elements.collect! {|v| yield(v)}
 		Vector.elements(els, false)
 	end
 
+	#
+	# Iterates the elements of a vector
+	#
 	def each 
 		(0...size).each {|i| yield(self[i])}
 		nil
 	end
 
+	#
+	# Returns the maximum element of a vector
+	#
 	def max
 		to_a.max
 	end
   
+	#
+	# Returns the minimum element of a vector
+	#
   def min
     to_a.min
   end
 
+	#
+	# Returns the p-norm of a vector
+	#
 	def norm(p = 2)
     Norm.sqnorm(self, p) ** (Float(1)/p)
   end
 
-  
+  #
+	# Returns the infinite-norm 
+	#
   def norm_inf
     [min.abs, max.abs].max
   end
 	
+	#
+	# Returns a slice of vector
+	#
 	def slice(*args)
 		Vector[*to_a.slice(*args)]	
 	end
@@ -79,7 +113,10 @@ class Vector
 			self[i] = v[i-b]	
 		end
 	end
-	
+
+	#
+	# Sets a slice of vector
+	#
 	def slice=(args)
 		case args[1]
 		when Range
@@ -89,14 +126,20 @@ class Vector
 		end
 	end
 
+	#
+	# Return the vector divided by a scalar
+	#
 	def /(c)
 		map {|e| e.quo(c)}
 	end
 
+	#
+	# Return the matrix column coresponding to the vector transpose
+	#
 	def transpose
 		Matrix[self.to_a]
 	end
-	
+
 	alias :t :transpose
 	
 	#
@@ -122,18 +165,27 @@ class Vector
 		return v, beta
 	end
 
-	# Projection operator (http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+	#
+	#Projection operator 
+	#(http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+	#
 	def proj(v)
 		vp = v.inner_product(self)
 		vp = Float vp if vp.is_a?(Integer)
 		self * (vp / inner_product(self))
 	end
 
+	#
+	# Return the vector normalized
+	#
 	def normalize
 		self / self.norm
 	end
 
-	# Stabilized Gram-Schmidt process (http://en.wikipedia.org/wiki/Gram-Schmidt_process#Algorithm)
+	# 
+	# Stabilized Gram-Schmidt process 
+	# (http://en.wikipedia.org/wiki/Gram-Schmidt_process#Algorithm)
+	#
 	def Vector.gram_schmidt(*vectors)
 		v = vectors.clone
 		for j in 0...v.size
@@ -159,13 +211,35 @@ class Matrix
 		f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
 		init_rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}}, true)
 	end
-	
+
+	#
+	# For invoking a method  
+	# in Ruby1.8 is working 'send' and
+	# in Ruby1.9 is working 'funcall'
+	#
 	def initialize_old(init_method, *argv)
-		self.funcall(init_method, *argv) # in Ruby1.9
-		#self.send(init_method, *argv) # in Ruby1.8
+		rubyVersion = $-I[0][-3..-1]
+		case rubyVersion
+		when "1.8"
+			self.send(init_method, *argv) # in Ruby1.8
+		when "1.9"
+			self.funcall(init_method, *argv) # in Ruby1.9
+		end
 	end
 
 	alias :ids :[]
+	#
+	# Return a value or a vector/matrix of values depending 
+	# if the indexes are ranges or not
+	# m = Matrix.new(4, 3){|i, j| i * 3 + j}
+	# m: 0  1  2
+	#    3  4  5
+	#    6  7  8
+	#    9 10 11
+	# m[1, 2] => 5
+	# m[3,1..2] => Vector[10, 11]
+	# m[0..1, 0..2] => Matrix[[0, 1, 2], [3, 4, 5]]
+	#
 	def [](i, j)
 		case i
 		when Range 
@@ -185,6 +259,17 @@ class Matrix
 		end		
 	end
 
+	#
+	# Set the values of a matrix
+	# m = Matrix.new(3, 3){|i, j| i * 3 + j}
+	# m: 0  1  2
+	#    3  4  5
+	#    6  7  8
+	# m[1, 2] = 9 => Matrix[[0, 1, 2], [3, 4, 9], [6, 7, 8]]
+	# m[2,1..2] = Vector[8, 8] => Matrix[[0, 1, 2], [3, 8, 8], [6, 7, 8]]
+	# m[0..1, 0..1] = Matrix[[0, 0, 0],[0, 0, 0]] 
+	# 		=> Matrix[[0, 0, 2], [0, 0, 8], [6, 7, 8]]
+	#
 	def []=(i, j, v)
 		case i
 		when Range
@@ -217,6 +302,9 @@ class Matrix
 		end		
 	end	
 
+	#
+	# Return a clone matrix
+	#
 	def clone
 		super
 	end
@@ -279,6 +367,9 @@ class Matrix
 	#
 	alias :/ :quo
 
+	#
+	# Set de values of a matrix and the value of wrap property
+	#
 	def set(m)
 		0.upto(m.row_size - 1) do |i|
 			0.upto(m.column_size - 1) do |j|
@@ -299,7 +390,10 @@ class Matrix
 		    end
 		  end"
 	end
-	
+
+	#
+	# Set wrap feature of a matrix
+	#
 	def wrap=(mode = :torus)
 		case mode
 		when :torus then eval(wraplate("i %= row_size; j %= column_size"))
@@ -310,14 +404,23 @@ class Matrix
 		@wrap = mode
 	end
 	
+	#
+	# Returns the maximum length of column elements
+	#
 	def max_len_column(j)		
 		column_collect(j) {|x| x.to_s.length}.max
 	end
 	
+	#
+	# Returns a list with the maximum lengths
+	#
 	def cols_len
 		(0...column_size).collect {|j| max_len_column(j)}
 	end
 	
+	#
+	# Returns a string for nice printing matrix
+	#
 	def to_s(mode = :pretty, len_col = 3)
 		return super if empty?
 		if mode == :pretty
@@ -334,12 +437,16 @@ class Matrix
 		end
 	end
 
+	#
+	# Iterate the elements of a matrix
+	#
 	def each
 		@rows.each {|x| x.each {|e| yield(e)}}
 		nil
 	end
 
-	  
+	#
+	# a hided module of Matrix
 	module MMatrix
 		def MMatrix.default_block(block)
     	block ? lambda { |i| block.call(i) } : lambda {|i| i }
@@ -376,7 +483,7 @@ class Matrix
 
 	#
 	# Returns row vector number "i" like Matrix.row as a Vector.
-	# When the block is given, the elements of row "i" are mmodified
+	# When the block is given, the elements of row "i" are modified
 	#
 	def row!(i)
 		if block_given?
