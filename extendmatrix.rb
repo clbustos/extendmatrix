@@ -222,7 +222,7 @@ class Matrix
 		if RUBY_VERSION < "1.9.0"
 			self.send(init_method, *argv) # in Ruby1.8
 		else
-			self.funcall(init_method, *argv) # in Ruby1.9
+			__send(init_method, *argv) # in Ruby1.9
 		end
 	end
 

@@ -250,7 +250,6 @@ class TestMatrix < Test::Unit::TestCase
 							 [2, 1]]
 		assert_equal l, m.L
 	end
-
 	def test_U
 	# e.g.: MC, Golub, 3.2 LU factorization, pg 94
 		m = Matrix[[3, 5],
