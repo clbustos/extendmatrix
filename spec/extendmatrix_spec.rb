@@ -8,21 +8,27 @@ describe "Vector class extension:" do
   before do
     @v = Vector.[](1, 2, 3, 4)
   end
-
-  it "[] method" do
-    v = @v.clone
-    v[1..2] = Vector[9, 9, 9, 9, 9]
-    v.should == Vector[1, 9, 9, 4]
+  it "[] with range returns correct values" do
+  @v[1..2]==Vector[2,3]
   end
-
-  it "Vector.concat method" do
+  it "[]= should change only specified range" do
+    @v[1..2] = Vector[9, 9, 9, 9, 9]
+    @v.should == Vector[1, 9, 9, 4]
+  end
+  
+  it "Vector.concat method should concat vectors" do
     Vector.concat(Vector[1], Vector[2, 3]).should == Vector[1, 2, 3]
     Vector.concat(Vector[1], Vector[2, 3], Vector[4, 5]).should ==  Vector[1, 2, 3, 4, 5]
   end
-
-  it "collect method" do
-    @v.collect!{|i| i * i}.should == Vector.[](1, 4, 9, 16)
-    @v.collect!{|i| 3 * i}.should == Vector.[](3, 12, 27, 48)
+  it "collect method returns collected vector and doesn't change original" do
+  @v.collect{|i| i*i}.should== Vector.[](1,4,9,16)
+  @v.should==Vector[1,2,3,4]
+  end
+  it "collect! method should change vector" do
+    @v.collect!{|i| i * i}
+    @v.should == Vector.[](1, 4, 9, 16)
+    @v.collect!{|i| 3 * i}
+    @v.should == Vector.[](3, 12, 27, 48)
   end
 
   it "each method" do
@@ -31,15 +37,15 @@ describe "Vector class extension:" do
     r.should == [2, 3, 4, 5]
   end
 
-  it "max element" do
+  it "max method should return max element" do
     @v.max.should == 4
   end
 
-  it "max element" do
+  it "min method should return min element" do
     @v.min.should == 1
   end
 
-  it "norm method" do
+  it "norm method returns correct norm" do
     v = Vector.[](3, 4)
     v.norm.should == 5
   end
@@ -66,7 +72,7 @@ describe "Vector class extension:" do
     v.norm(4).should < 4.29
   end
 
-  it "[]= method" do
+  it "[]= method should change specific value" do
     @v[3] = 10
     @v.should == Vector.[](1, 2, 3, 10)
   end
@@ -74,13 +80,16 @@ describe "Vector class extension:" do
   it "norm_inf" do
     @v.norm_inf.should == 4
   end
+  it "sum method returns the sum of elements" do
+    @v.sum.should==10
+  end
 end
 
 describe "Matrix class extension:" do
   before do
     @m = Matrix[[1, 2, 222], [2, 33, 4]]
   end
-  it "to_s method" do
+  it "to_s method should return something" do
     @m.to_s.size.should_not == 0
   end
   it "[] method" do

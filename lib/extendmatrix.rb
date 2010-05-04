@@ -1,10 +1,9 @@
 require 'rational'
 require 'matrix'
-
 class Vector
   include Enumerable
-   # fix for Vector#coerce on Ruby 1.8.x
-   if RUBY_VERSION<="1.9.0"
+  # fix for Vector#coerce on Ruby 1.8.x
+  if RUBY_VERSION<="1.9.0"
     alias_method :old_coerce, :coerce
     def coerce(other)
       case other
@@ -14,14 +13,11 @@ class Vector
         raise TypeError, "#{self.class} can't be coerced into #{other.class}"
       end
     end
-    
   end
-  
+
   module Norm
-    def Norm.sqnorm(obj, p)
-      sum = 0
-      obj.each{|x| sum += x ** p}
-      sum
+    def self.sqnorm(obj, p)
+      obj.inject(0) {|ac,x| ac+(x**p)}
     end
   end
 
@@ -100,12 +96,17 @@ class Vector
   def min
     to_a.min
   end
-
+  #
+  # Returns the sum of values
+  # 
+  def sum
+    to_a.inject(&:+)
+  end
   #
   # Returns the p-norm of a vector
   #
   def norm(p = 2)
-    Norm.sqnorm(self, p) ** (Float(1)/p)
+    Norm.sqnorm(self, p) ** (1.quo(p))
   end
 
   #
@@ -143,7 +144,7 @@ class Vector
   #
   # Return the vector divided by a scalar
   #
-  def /(c)
+  def / (c)
     map {|e| e.quo(c)}
   end
 
@@ -212,15 +213,16 @@ class Vector
   end
 end
 
-class Matrix 
-	
-   EXTENSION_VERSION="0.1.0"
+class Matrix
+
+  EXTENSION_VERSION="0.1.0"
   include Enumerable
   public_class_method :new
 
   attr_reader :rows, :wrap
   @wrap = nil
-
+  
+  alias :initialize_previous :initialize 
   def initialize(*argv)
     return initialize_old(*argv) if argv[0].is_a?(Symbol)
     n, m, val = argv; val = 0 if not val
@@ -237,38 +239,38 @@ class Matrix
 
   alias :ids :[]
   #
-	# Return a value or a vector/matrix of values depending 
-	# if the indexes are ranges or not
-	# m = Matrix.new(4, 3){|i, j| i * 3 + j}
-	# m: 0  1  2
-	#    3  4  5
-	#    6  7  8
-	#    9 10 11
-	# m[1, 2] => 5
-	# m[3,1..2] => Vector[10, 11]
-	# m[0..1, 0..2] => Matrix[[0, 1, 2], [3, 4, 5]]
-	#
-	def [](i, j)
-		case i
-		when Range 
-			case j
-			when Range
-				Matrix[*i.collect{|l| self.row(l)[j].to_a}]
-			else
-				column(j)[i]	
-			end
-		else
-			case j
-			when Range
-				row(i)[j]
-			else
-				ids(i, j)
-			end
-		end		
-	end
+  # Return a value or a vector/matrix of values depending
+  # if the indexes are ranges or not
+  # m = Matrix.new(4, 3){|i, j| i * 3 + j}
+  # m: 0  1  2
+  #    3  4  5
+  #    6  7  8
+  #    9 10 11
+  # m[1, 2] => 5
+  # m[3,1..2] => Vector[10, 11]
+  # m[0..1, 0..2] => Matrix[[0, 1, 2], [3, 4, 5]]
+  #
+  def [](i, j)
+    case i
+    when Range
+      case j
+      when Range
+        Matrix[*i.collect{|l| self.row(l)[j].to_a}]
+      else
+        column(j)[i]
+      end
+    else
+      case j
+      when Range
+        row(i)[j]
+      else
+        ids(i, j)
+      end
+    end
+  end
 
-  
-  
+
+
 
   #
   # Set the values of a matrix
@@ -316,7 +318,7 @@ class Matrix
   #
   # Return a clone matrix
   #
-  def clone
+  def dup
     super
   end
 
@@ -377,7 +379,7 @@ class Matrix
   def quo(v)
     map {|e| e.quo(v)}
   end
-
+  alias :old_divition :/ 
   #
   # quo seems always desirable
   #
@@ -433,6 +435,8 @@ end
 def cols_len
   (0...column_size).collect {|j| max_len_column(j)}
 end
+
+alias :to_s_old :to_s
 
 #
 # Returns a string for nice printing matrix
@@ -569,7 +573,7 @@ def row=(args)
 end
 
 def norm(p = 2)
-  Vector::Norm.sqnorm(self, p) ** (Float(1)/p)
+  Vector::Norm.sqnorm(self, p) ** (1.quo(p))
 end
 
 def norm_frobenius
@@ -587,8 +591,9 @@ end
 #
 # Returns the row/s of matrix as a Matrix
 #
+
 def row2matrix(r)
-  a = self.send(:row, r).to_a
+  a = row(r).to_a
   if r.is_a?(Range) and r.entries.size > 1
     return Matrix[*a]
   else
@@ -597,10 +602,10 @@ def row2matrix(r)
 end
 
 #
-# Returns the colomn/s of matrix as a Matrix
+# Returns the column/s of matrix as a Matrix
 #
 def column2matrix(c)
-  a = self.send(:column, c).to_a
+  a = column(c).to_a
   if c.is_a?(Range) and c.entries.size > 1
     return Matrix[*a]
   else
@@ -608,23 +613,23 @@ def column2matrix(c)
   end
 end
 
-# Calculate marginal of rows
-  def row_sum
+# Returns the marginal of rows
+def row_sum
   (0...row_size).collect {|i|
-    row(i).to_a.inject(0) {|a,v| a+v}
+    row(i).sum
   }
-  end
-  # Calculate marginal of columns
-  def column_sum
+end
+# Returns  the  of columns
+def column_sum
   (0...column_size).collect {|i|
-    column(i).to_a.inject(0) {|a,v| a+v}
+    column(i).sum
   }
-  end
+end
 # Calculate sum of cells
-  def total_sum
-    row_sum.inject(0){|a,v| a+v}
-  end
-  
+def total_sum
+  row_sum.inject(&:+)
+end
+
 module LU
   #
   #	Return the Gauss vector, MC, Golub, 3.2.1 Gauss Transformation, p94
