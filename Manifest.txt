@@ -1,7 +1,7 @@
 History.txt
 Manifest.txt
+ORIGINAL_README.txt
 README.txt
 Rakefile
-bin/matrix_cosminbonchis
-lib/matrix_cosminbonchis.rb
-test/test_matrix_cosminbonchis.rb
+lib/extendmatrix.rb
+spec/extendmatrix_spec.rb

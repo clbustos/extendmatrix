@@ -212,7 +212,9 @@ class Vector
   end
 end
 
-class Matrix
+class Matrix 
+	
+   EXTENSION_VERSION="0.1.0"
   include Enumerable
   public_class_method :new
 
