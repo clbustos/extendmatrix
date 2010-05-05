@@ -221,9 +221,6 @@ class Matrix
 
   attr_reader :rows, :wrap
   @wrap = nil
-  
-  
-
   #
   # For invoking a method
   #
