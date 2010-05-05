@@ -93,7 +93,7 @@ describe "Matrix class extension:" do
     @m.to_s.size.should_not == 0
   end
   it "[] method" do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j}
     m[1, 2].should == 5
     m[3, 1..2].should ==  Vector[10, 11]
     m[0..1, 0..2].should == Matrix[[0, 1, 2], [3, 4, 5]]
@@ -109,7 +109,7 @@ describe "Matrix class extension:" do
   end
   
   it "[]= method" do
-    m = Matrix.new(3, 3){|i, j| i * 3 + j}
+    m = Matrix.build(3, 3){|i, j| i * 3 + j}
     m[1, 2] = 9
     m.should == Matrix[[0, 1, 2], [3, 4, 9], [6, 7, 8]]
     m[1, 1..2] = Vector[8, 8]
@@ -119,14 +119,14 @@ describe "Matrix class extension:" do
   end
 
   it "set method" do
-    n = Matrix.new(2, 3)
+    n = Matrix.build(2, 3)
     n.set(@m)
     n.should == @m
   end
 
   it "set method and wrap value" do
     @m.wrap = :torus
-    n = Matrix.new(2, 3)
+    n = Matrix.build(2, 3)
     n.set(@m)
     n.wrap.should == :torus
   end
@@ -182,7 +182,7 @@ describe "Matrix class extension:" do
   end
 
   it "column= " do
-    m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+    m = Matrix.build(3, 3){|i, j| i * 3 + j + 1}
     m.column= 1, Vector[1,1,1,1,1,1]
     m.should == Matrix[[1, 1, 3],[4, 1, 6],[7, 1, 9]]
     m.column= 2, Vector[9,9], 0..1
@@ -190,7 +190,7 @@ describe "Matrix class extension:" do
   end
 
   it "row= " do
-    m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+    m = Matrix.build(3, 3){|i, j| i * 3 + j + 1}
     m.row= 1, Vector[1,1,1,1,1,1]
     m.should == Matrix[[1, 2, 3],[1, 1, 1],[7, 8, 9]]
     m.row= 2, Vector[9,9], 0..2
@@ -209,14 +209,14 @@ describe "Matrix class extension:" do
   end
 
   it "row2matrix" do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j + 1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j + 1}
     m.row2matrix(1..2).should == Matrix[[4, 5, 6],[7, 8, 9]]
     m.row2matrix(2).should == Matrix[[7, 8, 9]]
     m.row2matrix(0..4).should == m
   end
 
   it "column2matrix" do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j + 1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j + 1}
     m.column2matrix(1).should == Matrix[[2], [5], [8], [11]]
   end
 
@@ -224,7 +224,7 @@ describe "Matrix class extension:" do
     m1 = Matrix[[1]]
     m2 = Matrix[[2, 0], [0, 3]]
     m3 = Matrix[[4, 0, 0], [0, 5, 0], [0, 0, 6]]
-    a1 = Matrix.new(6, 6){|i, j| i == j ? i + 1: 0}
+    a1 = Matrix.build(6, 6){|i, j| i == j ? i + 1: 0}
     Matrix.diag(m1, m2, m3).should == a1
     Matrix.diag(m2).should == m2
     a2 = Matrix[[2, 0, 0, 0],
@@ -235,7 +235,7 @@ describe "Matrix class extension:" do
   end
 
   it "equal_in_delta" do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     Matrix.equal_in_delta?(m, m).should == true
     mm = m.clone
     mm[0,0] += 2
@@ -244,8 +244,8 @@ describe "Matrix class extension:" do
   end
 
   it "diag_in_delta" do
-    Matrix.diag_in_delta?(Matrix.I(5), Matrix.new(4, 4){|i, j| i + j}).should == false
-    m  = Matrix.new(5, 5){|i, j| i == j ? 1 + 0.001 * (i+1) : i + j}
+    Matrix.diag_in_delta?(Matrix.I(5), Matrix.build(4, 4){|i, j| i + j}).should == false
+    m  = Matrix.build(5, 5){|i, j| i == j ? 1 + 0.001 * (i+1) : i + j}
     Matrix.diag_in_delta?(Matrix.I(5), m, 0.01).should == true
   end
 
@@ -278,7 +278,7 @@ describe "Matrix class extension:" do
   end
 
   it "houseQR " do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     Matrix.equal_in_delta?(m, m.houseQ * m.houseR).should == true
     q = Matrix[[0.0776, 0.8330, 0.5329,  0.1264],
       [0.3104, 0.4512, -0.8048, 0.2286],
@@ -288,7 +288,7 @@ describe "Matrix class extension:" do
   end
 
   it "houseR " do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     r = Matrix[[12.88409, 14.59162, 16.29916],
       [       0,  1.04131, 2.082630],
       [       0,        0,        0],
@@ -298,7 +298,7 @@ describe "Matrix class extension:" do
 
   it "bidiagonalization" do
     # MC, Golub, p252, Example 5.4.2
-    m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     bidiag = Matrix[[12.884,  21.876, 0     ],
       [0,       2.246,  -0.613],
       [0,       0,      0     ],
@@ -318,7 +318,7 @@ describe "Matrix class extension:" do
   end
 
   it "givens " do
-    m = Matrix.new(4, 3){|i, j| i * 3 + j +1}
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     Matrix.equal_in_delta?(m, m.givensQ * m.givensR, 0.001).should == true
   end
 
@@ -346,7 +346,7 @@ describe "Matrix class extension:" do
   end
 
   it "realSchur" do
-    m = Matrix.new(3, 3){1} + Matrix.diagonal(2, 2, 2)
+    m = Matrix.build(3, 3){1} + Matrix.diagonal(2, 2, 2)
     e = Matrix[[5, 0, 0],[0, 2, 0],[0, 0, 2]]
     Matrix.diag_in_delta?(m.realSchur, e, 1.0e-5).should == true
   end

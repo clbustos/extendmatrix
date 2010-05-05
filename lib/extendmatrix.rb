@@ -59,11 +59,12 @@ class Vector
   class << self
     #
     # Returns a concatenated Vector
+    # 
+    #   Vector.concat(Vector[1,2,3], Vector[4,5,6])
+    #   => Vector[1, 2, 3, 4, 5, 6]
     #
     def concat(*args)
-      v = []
-      args.each{|x| v += x.to_a}
-      Vector[*v]
+      Vector.elements(args.inject([]){|ac,v| ac+v.to_a}, false)
     end
   end
 
@@ -97,7 +98,7 @@ class Vector
     to_a.min
   end
   #
-  # Returns the sum of values
+  # Returns the sum of values of the vector
   # 
   def sum
     to_a.inject(&:+)
@@ -194,7 +195,7 @@ class Vector
   # Return the vector normalized
   #
   def normalize
-    self / self.norm
+    self.quo(self.norm)
   end
 
   #
@@ -215,25 +216,18 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.1.0"
+  EXTENSION_VERSION="0.2.0"
   include Enumerable
-  public_class_method :new
 
   attr_reader :rows, :wrap
   @wrap = nil
   
-  alias :initialize_previous :initialize 
-  def initialize(*argv)
-    return initialize_old(*argv) if argv[0].is_a?(Symbol)
-    n, m, val = argv; val = 0 if not val
-    f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
-    init_rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}}, true)
-  end
+  
 
   #
   # For invoking a method
   #
-  def initialize_old(init_method, *argv)
+  def initialize_old(init_method, *argv) #:nodoc:
     self.send(init_method, *argv)
   end
 
@@ -241,7 +235,7 @@ class Matrix
   #
   # Return a value or a vector/matrix of values depending
   # if the indexes are ranges or not
-  # m = Matrix.new(4, 3){|i, j| i * 3 + j}
+  # m = Matrix.new_with_value(4, 3){|i, j| i * 3 + j}
   # m: 0  1  2
   #    3  4  5
   #    6  7  8
@@ -274,7 +268,7 @@ class Matrix
 
   #
   # Set the values of a matrix
-  # m = Matrix.new(3, 3){|i, j| i * 3 + j}
+  # m = Matrix.build(3, 3){|i, j| i * 3 + j}
   # m: 0  1  2
   #    3  4  5
   #    6  7  8
@@ -316,7 +310,7 @@ class Matrix
   end
 
   #
-  # Return a clone matrix
+  # Return a duplicate matrix
   #
   def dup
     super
@@ -329,6 +323,18 @@ class Matrix
 
 
   class << self
+     if !self.respond_to? :build
+	    #
+	    # Creates a matrix <tt>n</tt> x <tt>m</tt>
+	    # If you provide a block, it will be used to set the values.
+	    # If not, <tt>val</tt> will be used
+	    #
+	    
+	    def build(n,m,val=0)
+	      f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
+	      Matrix.rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}})
+	    end
+    end
     #
     # Creates a matrix with the given matrices as diagonal blocks
     #
@@ -545,7 +551,7 @@ alias :column_collect! :column!
 
 #
 # Set a certain column with the values of a Vector
-# m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+# m = Matrix.build(3, 3){|i, j| i * 3 + j + 1}
 # m.column= 1, Vector[1, 1, 1], 1..2
 # m => 1 2 3
 #      4 1 6
@@ -801,7 +807,7 @@ module Householder
     a = clone
     n = column_size
     m = row_size
-    q = Matrix.new(m, n){0}
+    q = Matrix.build(m, n){0}
     r = Matrix.zero(n)
     for k in 0...n
       r[k,k] = a[0...m, k].norm

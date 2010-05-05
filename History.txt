@@ -1,3 +1,7 @@
-=== 0.0.60 / 2010-05-04
+=== 0.2.0 / 2010-05-04
+* More rubyesque implementation of some methods
+* Matrix#new is not altered and previously extended #new is called #new_with_values
+
+=== 0.1.0 / 2010-05-04
 
 * First gem version
