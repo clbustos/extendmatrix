@@ -238,7 +238,13 @@ describe "Matrix class extension:" do
     [0, 0, 0, 3]]
     Matrix.diag(m2, m2).should == a2
   end
-
+  it "dup" do
+    m=Matrix.build(4, 3){|i, j| i * 3 + j +1}
+    mm=m.dup
+    mm.object_id.should_not==m.object_id
+    m[0,0]=10
+    mm[0,0].should_not==m[0,0]
+  end
   it "equal_in_delta" do
     m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
     Matrix.equal_in_delta?(m, m).should == true

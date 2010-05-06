@@ -1,3 +1,6 @@
+=== 0.2.2 / 2010-05-05
+* Bug fix on Matrix#dup. Doesn't works on Ruby1.9.2
+
 === 0.2.1 / 2010-05-05
 
 * Works on Ruby 1.9.2. Fixed conflicts between old and new Matrix implementation

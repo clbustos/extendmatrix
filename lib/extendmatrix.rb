@@ -217,7 +217,7 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.2.1"
+  EXTENSION_VERSION="0.2.2"
   include Enumerable
 
   attr_reader :rows, :wrap
@@ -312,10 +312,10 @@ class Matrix
   end
 
   #
-  # Return a duplicate matrix
+  # Return a duplicate matrix, with all elements copied
   #
   def dup
-    super
+    (self.class).rows(self.rows.dup)
   end
 
   def initialize_copy(orig)
