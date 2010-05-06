@@ -210,6 +210,7 @@ describe "Matrix class extension:" do
 
   it "row2matrix" do
     m = Matrix.build(4, 3){|i, j| i * 3 + j + 1}
+    
     m.row2matrix(1..2).should == Matrix[[4, 5, 6],[7, 8, 9]]
     m.row2matrix(2).should == Matrix[[7, 8, 9]]
     m.row2matrix(0..4).should == m
@@ -218,6 +219,10 @@ describe "Matrix class extension:" do
   it "column2matrix" do
     m = Matrix.build(4, 3){|i, j| i * 3 + j + 1}
     m.column2matrix(1).should == Matrix[[2], [5], [8], [11]]
+    m.column2matrix(1..1).should == Matrix[[2], [5], [8], [11]]
+
+    m.column2matrix(1..2).should == Matrix[[2,3], [5,6], [8,9], [11,12]]
+    
   end
 
   it "diag" do

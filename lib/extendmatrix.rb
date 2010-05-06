@@ -39,6 +39,7 @@ class Vector
     end
   end
 
+  
   #
   # Sets a vector value/(range of values) with a new value/(values from a vector)
   # v = Vector[1, 2, 3]
@@ -216,7 +217,7 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.2.0"
+  EXTENSION_VERSION="0.2.1"
   include Enumerable
 
   attr_reader :rows, :wrap
@@ -227,7 +228,11 @@ class Matrix
   def initialize_old(init_method, *argv) #:nodoc:
     self.send(init_method, *argv)
   end
-
+  # Return an empty matrix on n=0
+  # else, returns I(n)
+  def self.robust_I(n)
+    n>0 ? self.I(n) : self.[]
+  end
   alias :ids :[]
   #
   # Return a value or a vector/matrix of values depending
@@ -592,11 +597,15 @@ def empty?
 end
 
 #
-# Returns the row/s of matrix as a Matrix
+# Returns row(s) of matrix as a Matrix
 #
 
 def row2matrix(r)
-  a = row(r).to_a
+  if r.is_a? Range
+    a=r.map {|v| v<row_size ? row(v).to_a : nil }.find_all {|v| !v.nil?}
+  else
+    a = row(r).to_a
+  end
   if r.is_a?(Range) and r.entries.size > 1
     return Matrix[*a]
   else
@@ -608,9 +617,13 @@ end
 # Returns the column/s of matrix as a Matrix
 #
 def column2matrix(c)
-  a = column(c).to_a
-  if c.is_a?(Range) and c.entries.size > 1
-    return Matrix[*a]
+  if c.is_a?(Range)
+    a=c.map {|v| column(v).to_a}.find_all {|v| v.size>0}
+  else
+    a = column(c).to_a
+  end
+  if c.is_a?(Range)
+    return Matrix.columns(a)
   else
     return Matrix[*a.collect{|x| [x]}]
   end
@@ -701,16 +714,15 @@ module Householder
     a = mat.clone
     m = a.row_size
     n = a.column_size
-    n.times{|j|
+    n.times do |j|
       v, beta = a[j..m - 1, j].house
-
-      h[j] = Matrix.diag(Matrix.I(j), Matrix.I(m-j)- beta * (v * v.t))
-
+      h[j] = Matrix.diag(Matrix.robust_I(j), Matrix.I(m-j)- beta * (v * v.t))
+      
       a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
-    a[(j+1)..m-1,j] = v[2..(m-j)] if j < m - 1 }
+      a[(j+1)..m-1,j] = v[2..(m-j)] if j < m - 1 
+    end
     h
   end
-
   #
   # From the essential part of Householder vector
   # it returns the coresponding upper(U_j)/lower(V_j) matrix
@@ -718,7 +730,9 @@ module Householder
   def self.bidiagUV(essential, dim, beta)
     v = Vector.concat(Vector[1], essential)
     dimv = v.size
-    Matrix.diag(Matrix.I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
+    
+    
+    Matrix.diag(Matrix.robust_I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
   end
 
   #
@@ -899,7 +913,7 @@ module Householder
         for j in (0...n-1)
           c, s = Givens.givens(r[j,j], r[j+1, j])
           cs = Matrix[[c, s], [-s, c]]
-          q *= Matrix.diag(Matrix.I(j), cs, Matrix.I(n - j - 2))
+          q *= Matrix.diag(Matrix.robust_I(j), cs, Matrix.robust_I(n - j - 2))
           r[j..j+1, j..n-1] = cs.t * r[j..j+1, j..n-1]
         end
         return q, r
