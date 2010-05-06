@@ -1,4 +1,5 @@
 History.txt
+LICENSE.txt
 Manifest.txt
 ORIGINAL_README.txt
 README.txt
