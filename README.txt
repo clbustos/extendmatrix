@@ -7,7 +7,7 @@
 The project consists of some enhancements to the Ruby "Matrix" module and includes: LU and QR (Householder, Givens, Gram Schmidt, Hessenberg) decompositions, bidiagonalization, eigenvalue and eigenvector calculations.
 Include some aditional code to obtains marginal for rows and columns.
 
-The original code can be found on the RubyForge repository at http://matrix.rubyforge.org/svn/trunk/ or the project's SVN repository can be checked out through anonymous access with the following command(s).
+Original code from http://rubyforge.org/projects/matrix/
 
 Work done by Cosmin Bonchis as a Google Summer of Code 2007 project for Ruby Central Inc.
 
