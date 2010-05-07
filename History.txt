@@ -1,3 +1,9 @@
+=== 0.2.3 / 2010-05-05
+* Added LICENSE.txt
+* Complete README.txt
+* Added Vector#magnitude
+* Bug fix on Vector#normalize (quo doesn't defined)
+
 === 0.2.2 / 2010-05-05
 * Bug fix on Matrix#dup. Doesn't works on Ruby1.9.2
 

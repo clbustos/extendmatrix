@@ -222,7 +222,7 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.2.2"
+  EXTENSION_VERSION="0.2.3"
   include Enumerable
 
   attr_reader :rows, :wrap
