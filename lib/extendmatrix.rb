@@ -39,6 +39,11 @@ class Vector
     end
   end
 
+  # Magnitude or length of the vector
+  # Equal to sqrt(sum(x_i^2))
+  def magnitude
+    Math::sqrt(to_a.inject(0) {|ac,v| ac+(v**2)}) 
+  end
   
   #
   # Sets a vector value/(range of values) with a new value/(values from a vector)
@@ -149,7 +154,7 @@ class Vector
   def / (c)
     map {|e| e.quo(c)}
   end
-
+  alias :quo :/
   #
   # Return the matrix column coresponding to the vector transpose
   #
@@ -183,8 +188,8 @@ class Vector
   end
 
   #
-  #Projection operator
-  #(http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
+  # Projection operator
+  # (http://en.wikipedia.org/wiki/Gram-Schmidt_process#The_Gram.E2.80.93Schmidt_process)
   #
   def proj(v)
     vp = v.inner_product(self)

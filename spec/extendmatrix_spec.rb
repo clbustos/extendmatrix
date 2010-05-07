@@ -15,7 +15,14 @@ describe "Vector class extension:" do
     @v[1..2] = Vector[9, 9, 9, 9, 9]
     @v.should == Vector[1, 9, 9, 4]
   end
-  
+  it "magnitude methods returns vector length" do
+    @v.magnitude.should==Math::sqrt(30)
+  end
+  it "normalize methods returns the vector normalized" do
+    mag=Math::sqrt(30)
+    @v.normalize.should==@v.quo(mag)
+    
+  end
   it "Vector.concat method should concat vectors" do
     Vector.concat(Vector[1], Vector[2, 3]).should == Vector[1, 2, 3]
     Vector.concat(Vector[1], Vector[2, 3], Vector[4, 5]).should ==  Vector[1, 2, 3, 4, 5]
