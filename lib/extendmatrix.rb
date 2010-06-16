@@ -42,9 +42,9 @@ class Vector
   # Magnitude or length of the vector
   # Equal to sqrt(sum(x_i^2))
   def magnitude
-    Math::sqrt(to_a.inject(0) {|ac,v| ac+(v**2)}) 
+    Math::sqrt(to_a.inject(0) {|ac,v| ac+(v**2)})
   end
-  
+
   #
   # Sets a vector value/(range of values) with a new value/(values from a vector)
   # v = Vector[1, 2, 3]
@@ -65,7 +65,7 @@ class Vector
   class << self
     #
     # Returns a concatenated Vector
-    # 
+    #
     #   Vector.concat(Vector[1,2,3], Vector[4,5,6])
     #   => Vector[1, 2, 3, 4, 5, 6]
     #
@@ -105,7 +105,7 @@ class Vector
   end
   #
   # Returns the sum of values of the vector
-  # 
+  #
   def sum
     to_a.inject(&:+)
   end
@@ -330,17 +330,17 @@ class Matrix
 
 
   class << self
-     if !self.respond_to? :build
-	    #
-	    # Creates a matrix <tt>n</tt> x <tt>m</tt>
-	    # If you provide a block, it will be used to set the values.
-	    # If not, <tt>val</tt> will be used
-	    #
-	    
-	    def build(n,m,val=0)
-	      f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
-	      Matrix.rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}})
-	    end
+    if !self.respond_to? :build
+      #
+      # Creates a matrix <tt>n</tt> x <tt>m</tt>
+      # If you provide a block, it will be used to set the values.
+      # If not, <tt>val</tt> will be used
+      #
+
+      def build(n,m,val=0)
+        f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
+        Matrix.rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}})
+      end
     end
     #
     # Creates a matrix with the given matrices as diagonal blocks
@@ -392,7 +392,7 @@ class Matrix
   def quo(v)
     map {|e| e.quo(v)}
   end
-  alias :old_divition :/ 
+  alias :old_divition :/
   #
   # quo seems always desirable
   #
@@ -412,136 +412,136 @@ class Matrix
 
   def wraplate(ijwrap = "")
     "class << self
-    def [](i, j)
+      def [](i, j)
       #{ijwrap}; @rows[i][j]
-    end
+      end
 
-    def []=(i, j, v)
+      def []=(i, j, v)
       #{ijwrap}; @rows[i][j] = v
-    end
-  end"
-end
-
-#
-# Set wrap feature of a matrix
-#
-def wrap=(mode = :torus)
-  case mode
-  when :torus then eval(wraplate("i %= row_size; j %= column_size"))
-  when :h_cylinder then eval(wraplate("i %= row_size"))
-  when :v_cylinder then eval(wraplate("j %= column_size"))
-  when :nil then eval(wraplate)
-  end
-  @wrap = mode
-end
-
-#
-# Returns the maximum length of column elements
-#
-def max_len_column(j)
-  column_collect(j) {|x| x.to_s.length}.max
-end
-
-#
-# Returns a list with the maximum lengths
-#
-def cols_len
-  (0...column_size).collect {|j| max_len_column(j)}
-end
-
-alias :to_s_old :to_s
-
-#
-# Returns a string for nice printing matrix
-#
-def to_s(mode = :pretty, len_col = 3)
-  return super if empty?
-  if mode == :pretty
-    clen = cols_len
-    to_a.collect {|r|
-      i=0
-      r.map {|x|
-        l=clen[i]
-        i+=1
-        format("%#{l}s ", x.to_s)
-      } << "\n"
-    }.join("")
-  else
-    i = 0; s = ""; cs = column_size
-    each do |e|
-      i = (i + 1) % cs
-      s += format("%#{len_col}s ", e.to_s)
-      s += "\n" if i == 0
-    end
-    s
-  end
-end
-
-#
-# Iterate the elements of a matrix
-#
-def each
-  @rows.each {|x| x.each {|e| yield(e)}}
-  nil
-end
-
-#
-# a hided module of Matrix
-module MMatrix
-  def self.default_block(block)
-    block ? lambda { |i| block.call(i) } : lambda {|i| i }
+      end
+    end"
   end
 
   #
-  # Returns:
-  # 1) the index of row/column and
-  # 2) the values Vector for changing the row/column and
-  # 3) the range of changes
+  # Set wrap feature of a matrix
   #
-  def self.id_vect_range(args, l)
-    i = args[0] # the column(/the row) to be change
-    vect = args[1] # the values vector
-
-    case args.size
-    when 3 then range = args[2] # the range of the elements to be change
-    when 4 then range = args[2]..args[3] #the range by borders
-    else range = 0...l
+  def wrap=(mode = :torus)
+    case mode
+    when :torus then eval(wraplate("i %= row_size; j %= column_size"))
+    when :h_cylinder then eval(wraplate("i %= row_size"))
+    when :v_cylinder then eval(wraplate("j %= column_size"))
+    when :nil then eval(wraplate)
     end
-    return i, vect, range
+    @wrap = mode
   end
 
-end
-
-#
-# Returns an array with the elements collected from the row "i".
-# When a block is given, the elements of that vector are iterated.
-#
-def row_collect(i, &block)
-  f = MMatrix.default_block(block)
-  @rows[i].collect {|e| f.call(e)}
-end
-
-#
-# Returns row vector number "i" like Matrix.row as a Vector.
-# When the block is given, the elements of row "i" are modified
-#
-def row!(i)
-  if block_given?
-    @rows[i].collect! {|e| yield e }
-  else
-    Vector.elements(@rows[i], false)
+  #
+  # Returns the maximum length of column elements
+  #
+  def max_len_column(j)
+    column_collect(j) {|x| x.to_s.length}.max
   end
-end
-alias :row_collect! :row!
 
-#
-# Returns an array with the elements collected from the column "j".
-# When a block is given, the elements of that vector are iterated.
-#
-def column_collect(j, &block)
-  f = MMatrix.default_block(block)
-  (0...row_size).collect {|r| f.call(self[r, j])}
-end
+  #
+  # Returns a list with the maximum lengths
+  #
+  def cols_len
+    (0...column_size).collect {|j| max_len_column(j)}
+  end
+
+  alias :to_s_old :to_s
+
+  #
+  # Returns a string for nice printing matrix
+  #
+  def to_s(mode = :pretty, len_col = 3)
+    return super if empty?
+    if mode == :pretty
+      clen = cols_len
+      to_a.collect {|r|
+        i=0
+        r.map {|x|
+          l=clen[i]
+          i+=1
+          format("%#{l}s ", x.to_s)
+        } << "\n"
+      }.join("")
+    else
+      i = 0; s = ""; cs = column_size
+      each do |e|
+        i = (i + 1) % cs
+        s += format("%#{len_col}s ", e.to_s)
+        s += "\n" if i == 0
+      end
+      s
+    end
+  end
+
+  #
+  # Iterate the elements of a matrix
+  #
+  def each
+    @rows.each {|x| x.each {|e| yield(e)}}
+    nil
+  end
+
+  #
+  # a hided module of Matrix
+  module MMatrix
+    def self.default_block(block)
+      block ? lambda { |i| block.call(i) } : lambda {|i| i }
+    end
+
+    #
+    # Returns:
+    # 1) the index of row/column and
+    # 2) the values Vector for changing the row/column and
+    # 3) the range of changes
+    #
+    def self.id_vect_range(args, l)
+      i = args[0] # the column(/the row) to be change
+      vect = args[1] # the values vector
+  
+      case args.size
+      when 3 then range = args[2] # the range of the elements to be change
+      when 4 then range = args[2]..args[3] #the range by borders
+      else range = 0...l
+      end
+      return i, vect, range
+    end
+  
+  end
+
+  #
+  # Returns an array with the elements collected from the row "i".
+  # When a block is given, the elements of that vector are iterated.
+  #
+  def row_collect(i, &block)
+    f = MMatrix.default_block(block)
+    @rows[i].collect {|e| f.call(e)}
+  end
+
+  #
+  # Returns row vector number "i" like Matrix.row as a Vector.
+  # When the block is given, the elements of row "i" are modified
+  #
+  def row!(i)
+    if block_given?
+      @rows[i].collect! {|e| yield e }
+    else
+      Vector.elements(@rows[i], false)
+    end
+  end
+  alias :row_collect! :row!
+
+  #
+  # Returns an array with the elements collected from the column "j".
+  # When a block is given, the elements of that vector are iterated.
+  #
+  def column_collect(j, &block)
+    f = MMatrix.default_block(block)
+    (0...row_size).collect {|r| f.call(self[r, j])}
+  end
 
 #
 # Returns column vector number "j" as a Vector.
@@ -708,60 +708,59 @@ def L
   LU.factorization(self)[0]
 end
 
-module Householder
-  #
-  # a QR factorization that uses Householder transformation
-  # Q^T * A = R
-  # MC, Golub & van Loan, pg 224, 5.2.1 Householder QR
-  #
-  def self.QR(mat)
-    h = []
-    a = mat.clone
-    m = a.row_size
-    n = a.column_size
-    n.times do |j|
-      v, beta = a[j..m - 1, j].house
-      h[j] = Matrix.diag(Matrix.robust_I(j), Matrix.I(m-j)- beta * (v * v.t))
-      
-      a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
-      a[(j+1)..m-1,j] = v[2..(m-j)] if j < m - 1 
+  module Householder
+    #
+    # a QR factorization that uses Householder transformation
+    # Q^T * A = R
+    # MC, Golub & van Loan, pg 224, 5.2.1 Householder QR
+    #
+    def self.QR(mat)
+      h = []
+      a = mat.clone
+      m = a.row_size
+      n = a.column_size
+      n.times do |j|
+        v, beta = a[j..m - 1, j].house
+        h[j] = Matrix.diag(Matrix.robust_I(j), Matrix.I(m-j)- beta * (v * v.t))
+  
+        a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
+        a[(j+1)..m-1,j] = v[2..(m-j)] if j < m - 1
+      end
+      h
     end
-    h
-  end
-  #
-  # From the essential part of Householder vector
-  # it returns the coresponding upper(U_j)/lower(V_j) matrix
-  #
-  def self.bidiagUV(essential, dim, beta)
-    v = Vector.concat(Vector[1], essential)
-    dimv = v.size
-    
-    
-    Matrix.diag(Matrix.robust_I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
-  end
+    #
+    # From the essential part of Householder vector
+    # it returns the coresponding upper(U_j)/lower(V_j) matrix
+    #
+    def self.bidiagUV(essential, dim, beta)
+      v = Vector.concat(Vector[1], essential)
+      dimv = v.size
+      Matrix.diag(Matrix.robust_I(dim - dimv), Matrix.I(dimv) - beta * (v * v.t) )
+    end
 
-  #
-  # Householder Bidiagonalization algorithm. MC, Golub, pg 252, Algorithm 5.4.2
-  # Returns the matrices U_B and V_B such that: U_B^T * A * V_B = B,
-  # where B is upper bidiagonal.
-  #
-  def self.bidiag(mat)
-    a = mat.clone
-    m = a.row_size
-    n = a.column_size
-    ub = Matrix.I(m)
-    vb = Matrix.I(n)
-    n.times{|j|
-      v, beta = a[j..m-1,j].house
-      a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
-      a[j+1..m-1, j] = v[1..(m-j-1)]
-      ub *= bidiagUV(a[j+1..m-1,j], m, beta) #Ub = U_1 * U_2 * ... * U_n
-      if j < n - 2
-        v, beta = (a[j, j+1..n-1]).house
-        a[j..m-1, j+1..n-1] = a[j..m-1, j+1..n-1] * (Matrix.I(n-j-1) - beta * (v * v.t))
-        a[j, j+2..n-1] = v[1..n-j-2]
-        vb  *= bidiagUV(a[j, j+2..n-1], n, beta) #Vb = V_1 * U_2 * ... * V_n-2
-      end	}
+    #
+    # Householder Bidiagonalization algorithm. MC, Golub, pg 252, Algorithm 5.4.2
+    # Returns the matrices U_B and V_B such that: U_B^T * A * V_B = B,
+    # where B is upper bidiagonal.
+    #
+    def self.bidiag(mat)
+      a = mat.clone
+      m = a.row_size
+      n = a.column_size
+      ub = Matrix.I(m)
+      vb = Matrix.I(n)
+      n.times do |j|
+        v, beta = a[j..m-1,j].house
+        a[j..m-1, j..n-1] = (Matrix.I(m-j) - beta * (v * v.t)) * a[j..m-1, j..n-1]
+        a[j+1..m-1, j] = v[1..(m-j-1)]
+        ub *= bidiagUV(a[j+1..m-1,j], m, beta) #Ub = U_1 * U_2 * ... * U_n
+        if j < n - 2
+          v, beta = (a[j, j+1..n-1]).house
+          a[j..m-1, j+1..n-1] = a[j..m-1, j+1..n-1] * (Matrix.I(n-j-1) - beta * (v * v.t))
+          a[j, j+2..n-1] = v[1..n-j-2]
+          vb  *= bidiagUV(a[j, j+2..n-1], n, beta) #Vb = V_1 * U_2 * ... * V_n-2
+        end	
+      end
       return ub, vb
     end
 
@@ -781,8 +780,6 @@ module Householder
       end
       return h, u0
     end
-
-
   end #end of Householder module
 
   #
@@ -888,7 +885,6 @@ module Householder
         r[i-1..i, j..n-1] = Matrix[[c, -s],[s, c]] * r[i-1..i, j..n-1]}}
         return r, q
       end
-
     end
 
     #
