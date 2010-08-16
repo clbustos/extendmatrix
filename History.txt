@@ -1,3 +1,6 @@
+=== 0.3.0 / 2010-08-16
+* Added new methods, inspired on SPSS matrix methods: e_mult, e_quo, mssq, eigen, eigenpairs, ln, sqrt, sscp
+
 === 0.2.3 / 2010-05-05
 * Added LICENSE.txt
 * Complete README.txt

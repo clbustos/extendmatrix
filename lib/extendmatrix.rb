@@ -42,7 +42,7 @@ class Vector
   # Magnitude or length of the vector
   # Equal to sqrt(sum(x_i^2))
   def magnitude
-    Math::sqrt(to_a.inject(0) {|ac,v| ac+(v**2)})
+    Math::sqrt(to_a.inject(0) {|ac, v| ac+(v**2)})
   end
 
   #
@@ -222,7 +222,7 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.2.3"
+  EXTENSION_VERSION="0.3.0"
   include Enumerable
 
   attr_reader :rows, :wrap
@@ -392,6 +392,7 @@ class Matrix
   def quo(v)
     map {|e| e.quo(v)}
   end
+  
   alias :old_divition :/
   #
   # quo seems always desirable
@@ -455,7 +456,7 @@ class Matrix
   # Returns a string for nice printing matrix
   #
   def to_s(mode = :pretty, len_col = 3)
-    return super if empty?
+    return "Matrix[]" if empty?
     if mode == :pretty
       clen = cols_len
       to_a.collect {|r|
@@ -484,7 +485,61 @@ class Matrix
     @rows.each {|x| x.each {|e| yield(e)}}
     nil
   end
-
+  #
+  # :section: SPSS like methods
+  # 
+  
+  # Element wise operation
+  def elementwise_operation(op,other)
+    Matrix.build(row_size,column_size) do |row, column|
+      self[row,column].send(op,other[row,column])
+    end
+  end
+  # Element wise multiplication
+  def e_mult(other)
+    elementwise_operation(:*,other)
+  end
+  # Element wise multiplication
+  def e_quo(other)
+    elementwise_operation(:quo,other)
+  end
+  # Matrix sum of squares
+  def mssq
+    @rows.inject(0){|ac,row| row.inject(0) {|acr,i| acr+(i**2)}}
+  end
+  def eigenpairs
+    eigval, eigvec= eigenvaluesJacobi, cJacobiV
+    eigenpairs=eigval.size.times.map {|i|
+      [eigval[i], eigvec.column(i)]
+    }
+    eigenpairs=eigenpairs.sort{|a,b| a[0]<=>b[0]}.reverse
+  end
+  # Returns eigenvalues and eigenvectors of a matrix on a Hash
+  # like CALL EIGEN on SPSS.
+  # * _:eigenvectors_: contains the eigenvectors as columns of a new Matrix, ordered in descendent order
+  # * _:eigenvalues_:  contains an array with the eigenvalues, ordered in descendent order
+  def eigen
+    ep=eigenpairs
+    { :eigenvalues=>ep.map {|a| a[0]} ,
+      :eigenvectors=>Matrix.columns(ep.map{|a| a[1]})
+    }
+  end
+  # Returns a new matrix with the natural logarithm of initial values
+  def ln
+    map {|v| Math::log(v)}
+  end
+  # Returns a new matrix, with the square root of initial values
+  def sqrt
+    map {|v| Math::sqrt(v)}
+  end
+  # Sum of squares and cross-products. Equal to m.t * m
+  def sscp
+    transpose*self
+  end
+  #
+  # :section: Advanced methods
+  #
+  
   #
   # a hided module of Matrix
   module MMatrix
@@ -640,7 +695,7 @@ def row_sum
     row(i).sum
   }
 end
-# Returns  the  of columns
+# Returns  the marginal of columns
 def column_sum
   (0...column_size).collect {|i|
     column(i).sum
@@ -882,190 +937,194 @@ end
           c, s = givens(r[i - 1, j], r[i, j])
           qt = Matrix.I(m); qt[i-1..i, i-1..i] = Matrix[[c, s],[-s, c]]
           q *= qt
-        r[i-1..i, j..n-1] = Matrix[[c, -s],[s, c]] * r[i-1..i, j..n-1]}}
-        return r, q
+        r[i-1..i, j..n-1] = Matrix[[c, -s],[s, c]] * r[i-1..i, j..n-1]
+        }
+      }
+      return r, q
+    end
+  end
+
+  #
+  # Returns the upper triunghiular matrix R of a Givens QR factorization
+  #
+  def givensR
+    Givens.QR(self)[0]
+  end
+
+  #
+  # Returns the orthogonal matrix Q of Givens QR factorization.
+  # Q = G_1 * ... * G_t where G_j is the j'th Givens rotation
+  # and 't' is the total number of rotations
+  #
+  def givensQ
+    Givens.QR(self)[1]
+  end
+
+  module Hessenberg
+    #
+    #	the matrix must be an upper R^(n x n) Hessenberg matrix
+    #
+    def self.QR(mat)
+      r = mat.clone
+      n = r.row_size
+      q = Matrix.I(n)
+      for j in (0...n-1)
+        c, s = Givens.givens(r[j,j], r[j+1, j])
+        cs = Matrix[[c, s], [-s, c]]
+        q *= Matrix.diag(Matrix.robust_I(j), cs, Matrix.robust_I(n - j - 2))
+        r[j..j+1, j..n-1] = cs.t * r[j..j+1, j..n-1]
       end
+      return q, r
+    end
+  end
+
+  #
+  # Returns the orthogonal matrix Q of Hessenberg QR factorization
+  # Q = G_1 *...* G_(n-1) where G_j is the Givens rotation G_j = G(j, j+1, omega_j)
+  #
+  def hessenbergQ
+    Hessenberg.QR(self)[0]
+  end
+
+  #
+  # Returns the upper triunghiular matrix R of a Hessenberg QR factorization
+  #
+  def hessenbergR
+    Hessenberg.QR(self)[1]
+  end
+
+  #
+  # Return an upper Hessenberg matrix obtained with Householder reduction to Hessenberg Form algorithm
+  #
+  def hessenberg_form_H
+    Householder.toHessenberg(self)[0]
+  end
+
+  #
+  # The real Schur decomposition.
+  # The eigenvalues are aproximated in diagonal elements of the real Schur decomposition matrix
+  #
+  def realSchur(eps = 1.0e-10, steps = 100)
+    h = self.hessenberg_form_H
+    h1 = Matrix[]
+    i = 0
+    loop do
+      h1 = h.hessenbergR * h.hessenbergQ
+      break if Matrix.diag_in_delta?(h1, h, eps) or steps <= 0
+      h = h1.clone
+      steps -= 1
+      i += 1
+    end
+    h1
+  end
+
+
+  module Jacobi
+    #
+    # Returns the nurm of the off-diagonal element
+    #
+    def self.off(a)
+      n = a.row_size
+      sum = 0
+      n.times{|i| n.times{|j| sum += a[i, j]**2 if j != i}}
+      Math.sqrt(sum)
     end
 
     #
-    # Returns the upper triunghiular matrix R of a Givens QR factorization
+    # Returns the index pair (p, q) with 1<= p < q <= n and A[p, q] is the maximum in absolute value
     #
-    def givensR
-      Givens.QR(self)[0]
+    def self.max(a)
+      n = a.row_size
+      max = 0
+      p = 0
+      q = 0
+      n.times{|i|
+        ((i+1)...n).each{|j|
+          val = a[i, j].abs
+          if val > max
+            max = val
+            p = i
+            q = j
+          end	
+        }
+      }
+      return p, q
     end
 
     #
-    # Returns the orthogonal matrix Q of Givens QR factorization.
-    # Q = G_1 * ... * G_t where G_j is the j'th Givens rotation
-    # and 't' is the total number of rotations
+    # Compute the cosine-sine pair (c, s) for the element A[p, q]
     #
-    def givensQ
-      Givens.QR(self)[1]
-    end
-
-    module Hessenberg
-      #
-      #	the matrix must be an upper R^(n x n) Hessenberg matrix
-      #
-      def self.QR(mat)
-        r = mat.clone
-        n = r.row_size
-        q = Matrix.I(n)
-        for j in (0...n-1)
-          c, s = Givens.givens(r[j,j], r[j+1, j])
-          cs = Matrix[[c, s], [-s, c]]
-          q *= Matrix.diag(Matrix.robust_I(j), cs, Matrix.robust_I(n - j - 2))
-          r[j..j+1, j..n-1] = cs.t * r[j..j+1, j..n-1]
+    def self.sym_schur2(a, p, q)
+      if a[p, q] != 0
+        tau = Float(a[q, q] - a[p, p])/(2 * a[p, q])
+        if tau >= 0
+          t = 1./(tau + Math.sqrt(1 + tau ** 2))
+        else
+          t = -1./(-tau + Math.sqrt(1 + tau ** 2))
         end
-        return q, r
+        c = 1./Math.sqrt(1 + t ** 2)
+        s = t * c
+      else
+        c = 1
+        s = 0
       end
+      return c, s
     end
 
     #
-    # Returns the orthogonal matrix Q of Hessenberg QR factorization
-    # Q = G_1 *...* G_(n-1) where G_j is the Givens rotation G_j = G(j, j+1, omega_j)
+    # Returns the Jacobi rotation matrix
     #
-    def hessenbergQ
-      Hessenberg.QR(self)[0]
+    def self.J(p, q, c, s, n)
+      j = Matrix.I(n)
+      j[p,p] = c; j[p, q] = s
+      j[q,p] = -s; j[q, q] = c
+      j
     end
+  end
 
-    #
-    # Returns the upper triunghiular matrix R of a Hessenberg QR factorization
-    #
-    def hessenbergR
-      Hessenberg.QR(self)[1]
+  #
+  # Classical Jacobi 8.4.3 Golub & van Loan
+  #
+  def cJacobi(tol = 1.0e-10)
+    a = self.clone
+    n = row_size
+    v = Matrix.I(n)
+    eps = tol * a.normF
+    while Jacobi.off(a) > eps
+      p, q = Jacobi.max(a)
+      c, s = Jacobi.sym_schur2(a, p, q)
+      #print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
+      j = Jacobi.J(p, q, c, s, n)
+      a = j.t * a * j
+      v = v * j
     end
+    return a, v
+  end
 
-    #
-    # Return an upper Hessenberg matrix obtained with Householder reduction to Hessenberg Form algorithm
-    #
-    def hessenberg_form_H
-      Householder.toHessenberg(self)[0]
-    end
+  #
+  # Returns the aproximation matrix computed with Classical Jacobi algorithm.
+  # The aproximate eigenvalues values are in the diagonal of the matrix A.
+  #
+  def cJacobiA(tol = 1.0e-10)
+    cJacobi(tol)[0]
+  end
 
-    #
-    # The real Schur decomposition.
-    # The eigenvalues are aproximated in diagonal elements of the real Schur decomposition matrix
-    #
-    def realSchur(eps = 1.0e-10, steps = 100)
-      h = self.hessenberg_form_H
-      h1 = Matrix[]
-      i = 0
-      loop do
-        h1 = h.hessenbergR * h.hessenbergQ
-        break if Matrix.diag_in_delta?(h1, h, eps) or steps <= 0
-        h = h1.clone
-        steps -= 1
-        i += 1
-      end
-      h1
-    end
+  #
+  # Returns a Vector with the eigenvalues aproximated values.
+  # The eigenvalues are computed with the Classic Jacobi Algorithm.
+  #
+  def eigenvaluesJacobi
+    a = cJacobiA
+    Vector[*(0...row_size).collect{|i| a[i, i]}]
+  end
 
-
-    module Jacobi
-      #
-      # Returns the nurm of the off-diagonal element
-      #
-      def self.off(a)
-        n = a.row_size
-        sum = 0
-        n.times{|i| n.times{|j| sum += a[i, j]**2 if j != i}}
-        Math.sqrt(sum)
-      end
-
-      #
-      # Returns the index pair (p, q) with 1<= p < q <= n and A[p, q] is the maximum in absolute value
-      #
-      def self.max(a)
-        n = a.row_size
-        max = 0
-        p = 0
-        q = 0
-        n.times{|i|
-          ((i+1)...n).each{|j|
-            val = a[i, j].abs
-            if val > max
-              max = val
-              p = i
-              q = j
-            end	}}
-            return p, q
-          end
-
-          #
-          # Compute the cosine-sine pair (c, s) for the element A[p, q]
-          #
-          def self.sym_schur2(a, p, q)
-            if a[p, q] != 0
-              tau = Float(a[q, q] - a[p, p])/(2 * a[p, q])
-              if tau >= 0
-                t = 1./(tau + Math.sqrt(1 + tau ** 2))
-              else
-                t = -1./(-tau + Math.sqrt(1 + tau ** 2))
-              end
-              c = 1./Math.sqrt(1 + t ** 2)
-              s = t * c
-            else
-              c = 1
-              s = 0
-            end
-            return c, s
-          end
-
-          #
-          # Returns the Jacobi rotation matrix
-          #
-          def self.J(p, q, c, s, n)
-            j = Matrix.I(n)
-            j[p,p] = c; j[p, q] = s
-            j[q,p] = -s; j[q, q] = c
-            j
-          end
-        end
-
-        #
-        # Classical Jacobi 8.4.3 Golub & van Loan
-        #
-        def cJacobi(tol = 1.0e-10)
-          a = self.clone
-          n = row_size
-          v = Matrix.I(n)
-          eps = tol * a.normF
-          while Jacobi.off(a) > eps
-            p, q = Jacobi.max(a)
-            c, s = Jacobi.sym_schur2(a, p, q)
-            #print "\np:#{p} q:#{q} c:#{c} s:#{s}\n"
-            j = Jacobi.J(p, q, c, s, n)
-            a = j.t * a * j
-            v = v * j
-          end
-          return a, v
-        end
-
-        #
-        # Returns the aproximation matrix computed with Classical Jacobi algorithm.
-        # The aproximate eigenvalues values are in the diagonal of the matrix A.
-        #
-        def cJacobiA(tol = 1.0e-10)
-          cJacobi(tol)[0]
-        end
-
-        #
-        # Returns a Vector with the eigenvalues aproximated values.
-        # The eigenvalues are computed with the Classic Jacobi Algorithm.
-        #
-        def eigenvaluesJacobi
-          a = cJacobiA
-          Vector[*(0...row_size).collect{|i| a[i, i]}]
-        end
-
-        #
-        # Returns the orthogonal matrix obtained with the Jacobi eigenvalue algorithm.
-        # The columns of V are the eigenvector.
-        #
-        def cJacobiV(tol = 1.0e-10)
-          cJacobi(tol)[1]
-        end
-      end
+  #
+  # Returns the orthogonal matrix obtained with the Jacobi eigenvalue algorithm.
+  # The columns of V are the eigenvector.
+  #
+  def cJacobiV(tol = 1.0e-10)
+    cJacobi(tol)[1]
+  end
+end
 
 

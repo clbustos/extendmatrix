@@ -266,7 +266,40 @@ describe "Matrix class extension:" do
     m  = Matrix.build(5, 5){|i, j| i == j ? 1 + 0.001 * (i+1) : i + j}
     Matrix.diag_in_delta?(Matrix.I(5), m, 0.01).should == true
   end
-
+  
+  
+  it "e_mult method" do
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
+    n = Matrix.build(4, 3){|i, j| i * 2 + j +2}
+    m.e_mult(n).should==Matrix.build(4,3){|i,j| (i*3+j+1)*(i*2+j+2)}
+  end
+  it "e_mult method" do
+    m = Matrix.build(4, 3){|i, j| i * 3 + j +1}
+    n = Matrix.build(4, 3){|i, j| i * 2 + j +2}
+    m.e_quo(n).should==Matrix.build(4,3){|i,j| (i*3+j+1).quo(i*2+j+2)}
+  end
+  it "mssq method" do
+    m = Matrix[[1,2,3],[4,5,6]]
+    m.mssq==91
+  end
+  it "eigen" do
+    m=Matrix[[0.95,0.95,0.01,0.01],[0.95,0.95,0.01,0.01],[0.01, 0.01,0.95,0.95], [0.01, 0.01, 0.95, 0.95]]
+    eigenvalues=[1.92,1.88,0.0,0.0]
+    eigen=m.eigen
+    eigen[:eigenvalues].each_with_index do |v,i|
+      v.should be_close(eigenvalues[i],0.01)
+    end
+    eigenvectors=Matrix[[0.5, 0.5, 0.0, 0.707106781186547], [0.5, 0.5, 0.0, -0.707106781186547], [0.5, -0.5, 0.707106781186547, 0.0], [0.5, -0.5, -0.707106781186547, 0.0]]
+    Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should==true
+  end
+  it "sqrt" do
+    m=Matrix[[1,4,9],[16,25,36]]
+    m.sqrt.should==Matrix[[1,2,3],[4,5,6]]
+  end
+  it "sscp" do
+    m=Matrix[[1,4,9],[16,25,36]]
+    m.sscp.should== m.t*m
+  end
   it "LU " do
     m = Matrix[[1, 4, 7],
       [2, 5, 8],
@@ -379,6 +412,6 @@ describe "Matrix class extension:" do
     [4, 5, 4, 1]]
     e = Matrix[[-0.26828, 0, 0, 0], [0, -5.97550, 0, 0], [0, 0, 1.01373, 0], [0, 0, 0, 9.23004]]
     Matrix.diag_in_delta?(e, a.cJacobiA, 1.0e-5).should == true
-  end
+  end  
 end
 
