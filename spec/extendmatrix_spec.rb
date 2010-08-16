@@ -279,8 +279,8 @@ describe "Matrix class extension:" do
     m.e_quo(n).should==Matrix.build(4,3){|i,j| (i*3+j+1).quo(i*2+j+2)}
   end
   it "mssq method" do
-    m = Matrix[[1,2,3],[4,5,6]]
-    m.mssq==91
+    m = Matrix[[1,2,3],[4,5,6],[7,8,9]]
+    m.mssq.should==(1..9).each.inject(0) {|ac,v| ac+v**2}
   end
   it "eigen" do
     m=Matrix[[0.95,0.95,0.01,0.01],[0.95,0.95,0.01,0.01],[0.01, 0.01,0.95,0.95], [0.01, 0.01, 0.95, 0.95]]
@@ -290,7 +290,7 @@ describe "Matrix class extension:" do
       v.should be_close(eigenvalues[i],0.01)
     end
     eigenvectors=Matrix[[0.5, 0.5, 0.0, 0.707106781186547], [0.5, 0.5, 0.0, -0.707106781186547], [0.5, -0.5, 0.707106781186547, 0.0], [0.5, -0.5, -0.707106781186547, 0.0]]
-    Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should==true
+    Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should be_true
   end
   it "sqrt" do
     m=Matrix[[1,4,9],[16,25,36]]
@@ -299,6 +299,12 @@ describe "Matrix class extension:" do
   it "sscp" do
     m=Matrix[[1,4,9],[16,25,36]]
     m.sscp.should== m.t*m
+  end
+  it "diagonal" do
+    m=Matrix.diag(1,4,5,6,7)
+    m.diagonal.should==[1,4,5,6,7]
+    m=Matrix[[1,2,3],[4,5,6],[7,8,9],[10,11,12]]
+    m.diagonal.should==[1,5,9]  
   end
   it "LU " do
     m = Matrix[[1, 4, 7],

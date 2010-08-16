@@ -1,3 +1,7 @@
+=== 0.3.1 / 2010-08-16
+* Bug fix: method mssq returns only the last row squares
+* Added method diagonal 
+
 === 0.3.0 / 2010-08-16
 * Added new methods, inspired on SPSS matrix methods: e_mult, e_quo, mssq, eigen, eigenpairs, ln, sqrt, sscp
 

@@ -222,7 +222,7 @@ end
 
 class Matrix
 
-  EXTENSION_VERSION="0.3.0"
+  EXTENSION_VERSION="0.3.1"
   include Enumerable
 
   attr_reader :rows, :wrap
@@ -505,7 +505,7 @@ class Matrix
   end
   # Matrix sum of squares
   def mssq
-    @rows.inject(0){|ac,row| row.inject(0) {|acr,i| acr+(i**2)}}
+    @rows.inject(0){|ac,row| ac+(row.inject(0) {|acr,i| acr+(i**2)})}
   end
   def eigenpairs
     eigval, eigvec= eigenvaluesJacobi, cJacobiV
@@ -535,6 +535,13 @@ class Matrix
   # Sum of squares and cross-products. Equal to m.t * m
   def sscp
     transpose*self
+  end
+  # Diagonal of matrix.
+  # Returns an array with as many elements as the minimum of the number of rows
+  # and the number of columns in the argument
+  def diagonal
+    min = (row_size<column_size) ? row_size : column_size
+    min.times.map {|i| self[i,i]}
   end
   #
   # :section: Advanced methods
