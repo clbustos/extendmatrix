@@ -1,6 +1,6 @@
 $:.unshift(File.dirname(__FILE__)+"/../lib")
-require 'spec'
-require 'spec/autorun'
+require 'rspec'
+require 'rspec/core/rake_task'
 
 require 'extendmatrix'
 
@@ -287,7 +287,7 @@ describe "Matrix class extension:" do
     eigenvalues=[1.92,1.88,0.0,0.0]
     eigen=m.eigen
     eigen[:eigenvalues].each_with_index do |v,i|
-      v.should be_close(eigenvalues[i],0.01)
+      v.should be_within(0.01).of(eigenvalues[i])
     end
     eigenvectors=Matrix[[0.5, 0.5, 0.0, 0.707106781186547], [0.5, 0.5, 0.0, -0.707106781186547], [0.5, -0.5, 0.707106781186547, 0.0], [0.5, -0.5, -0.707106781186547, 0.0]]
     Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should be_true
