@@ -507,6 +507,7 @@ class Matrix
   def mssq
     @rows.inject(0){|ac,row| ac+(row.inject(0) {|acr,i| acr+(i**2)})}
   end
+  
   def eigenpairs
     eigval, eigvec= eigenvaluesJacobi, cJacobiV
     eigenpairs=eigval.size.times.map {|i|
@@ -514,6 +515,7 @@ class Matrix
     }
     eigenpairs=eigenpairs.sort{|a,b| a[0]<=>b[0]}.reverse
   end
+
   # Returns eigenvalues and eigenvectors of a matrix on a Hash
   # like CALL EIGEN on SPSS.
   # * _:eigenvectors_: contains the eigenvectors as columns of a new Matrix, ordered in descendent order

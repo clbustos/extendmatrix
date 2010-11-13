@@ -292,6 +292,18 @@ describe "Matrix class extension:" do
     eigenvectors=Matrix[[0.5, 0.5, 0.0, 0.707106781186547], [0.5, 0.5, 0.0, -0.707106781186547], [0.5, -0.5, 0.707106781186547, 0.0], [0.5, -0.5, -0.707106781186547, 0.0]]
     Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should be_true
   end
+  it "eigenpairs" do
+    m=Matrix[[0.95,0.95,0.01,0.01],[0.95,0.95,0.01,0.01],[0.01, 0.01,0.95,0.95], [0.01, 0.01, 0.95, 0.95]]
+    eigenpairs=[[1.92, Vector[0.5, 0.5, 0.5, 0.5]], [1.88, Vector[0.5, 0.5, -0.5, -0.5]], [0.0, Vector[0.0, 0.0, 0.707, -0.707]], [0.0, Vector[0.707, -0.707, 0.0, 0.0]]]
+    observed=m.eigenpairs
+    eigenpairs.each_with_index do |v,i|
+      observed[i][0].should be_within(0.001).of(v[0])
+      observed[i][1].each_with_index {|vv,ii|
+        vv.should be_within(0.001).of(v[1][ii])
+      }
+      
+    end
+  end
   it "sqrt" do
     m=Matrix[[1,4,9],[16,25,36]]
     m.sqrt.should==Matrix[[1,2,3],[4,5,6]]
