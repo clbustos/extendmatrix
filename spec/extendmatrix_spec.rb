@@ -90,6 +90,11 @@ describe "Vector class extension:" do
   it "sum method returns the sum of elements" do
     @v.sum.should==10
   end
+  
+  it "allows for multiple assignment" do
+    a, b, c, d = @v
+    [a, b, c, d].should == [1, 2, 3, 4]
+  end
 end
 
 describe "Matrix class extension:" do
@@ -430,6 +435,11 @@ describe "Matrix class extension:" do
     [4, 5, 4, 1]]
     e = Matrix[[-0.26828, 0, 0, 0], [0, -5.97550, 0, 0], [0, 0, 1.01373, 0], [0, 0, 0, 9.23004]]
     Matrix.diag_in_delta?(e, a.cJacobiA, 1.0e-5).should == true
-  end  
+  end
+  
+  it "allows for multiple assignment" do
+    a, b = @m
+    [a, b].should == [[1, 2, 222], [2, 33, 4]]
+  end
 end
 
