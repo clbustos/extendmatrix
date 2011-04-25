@@ -1,2 +1,5 @@
+.rvmrc
+Gemfile
+*.lock
 *~
 pkg
