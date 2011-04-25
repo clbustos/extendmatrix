@@ -21,6 +21,8 @@ class Vector
     end
   end
 
+  alias :to_ary :to_a
+
   alias :length :size
   alias :index :[]
   #
@@ -224,6 +226,8 @@ class Matrix
 
   EXTENSION_VERSION="0.3.1"
   include Enumerable
+
+  alias :to_ary :to_a
 
   attr_reader :rows, :wrap
   @wrap = nil
