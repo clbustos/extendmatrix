@@ -295,7 +295,7 @@ describe "Matrix class extension:" do
       v.should be_within(0.01).of(eigenvalues[i])
     end
     eigenvectors=Matrix[[0.5, 0.5, 0.0, 0.707106781186547], [0.5, 0.5, 0.0, -0.707106781186547], [0.5, -0.5, 0.707106781186547, 0.0], [0.5, -0.5, -0.707106781186547, 0.0]]
-    Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors).should be_true
+    expect(Matrix.equal_in_delta?(eigen[:eigenvectors], eigenvectors)).to be(true)
   end
   it "eigenpairs" do
     m=Matrix[[0.95,0.95,0.01,0.01],[0.95,0.95,0.01,0.01],[0.01, 0.01,0.95,0.95], [0.01, 0.01, 0.95, 0.95]]

@@ -1,3 +1,9 @@
+=== 0.4
+* Code cleanup
+* Added separate version.rb file for storing VERSION info
+* Added gem essentials like gemspec, etc.
+* Removed support for ruby < 1.9.3
+
 === 0.3.1 / 2010-08-16
 * Bug fix: method mssq returns only the last row squares
 * Added method diagonal 

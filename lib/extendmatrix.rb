@@ -2,18 +2,6 @@ require 'rational'
 require 'matrix'
 class Vector
   include Enumerable
-  # fix for Vector#coerce on Ruby 1.8.x
-  if RUBY_VERSION<="1.9.0"
-    alias_method :old_coerce, :coerce
-    def coerce(other)
-      case other
-      when Numeric
-        return Matrix::Scalar.new(other), self
-      else
-        raise TypeError, "#{self.class} can't be coerced into #{other.class}"
-      end
-    end
-  end
 
   module Norm
     def self.sqnorm(obj, p)
@@ -22,7 +10,6 @@ class Vector
   end
 
   alias :to_ary :to_a
-
   alias :length :size
   alias :index :[]
   #
@@ -223,12 +210,9 @@ class Vector
 end
 
 class Matrix
-
-  EXTENSION_VERSION="0.3.1"
   include Enumerable
 
   alias :to_ary :to_a
-
   attr_reader :rows, :wrap
   @wrap = nil
   #
@@ -254,7 +238,6 @@ class Matrix
   # m[1, 2] => 5
   # m[3,1..2] => Vector[10, 11]
   # m[0..1, 0..2] => Matrix[[0, 1, 2], [3, 4, 5]]
-  #
   def [](i, j)
     case i
     when Range
@@ -274,9 +257,6 @@ class Matrix
     end
   end
 
-
-
-
   #
   # Set the values of a matrix
   # m = Matrix.build(3, 3){|i, j| i * 3 + j}
@@ -287,7 +267,6 @@ class Matrix
   # m[2,1..2] = Vector[8, 8] => Matrix[[0, 1, 2], [3, 8, 8], [6, 7, 8]]
   # m[0..1, 0..1] = Matrix[[0, 0, 0],[0, 0, 0]]
   # 		=> Matrix[[0, 0, 2], [0, 0, 8], [6, 7, 8]]
-  #
   def []=(i, j, v)
     case i
     when Range
@@ -322,7 +301,6 @@ class Matrix
 
   #
   # Return a duplicate matrix, with all elements copied
-  #
   def dup
     (self.class).rows(self.rows.dup)
   end
@@ -339,8 +317,6 @@ class Matrix
       # Creates a matrix <tt>n</tt> x <tt>m</tt>
       # If you provide a block, it will be used to set the values.
       # If not, <tt>val</tt> will be used
-      #
-
       def build(n,m,val=0)
         f = (block_given?)? lambda {|i,j| yield(i, j)} : lambda {|i,j| val}
         Matrix.rows((0...n).collect {|i| (0...m).collect {|j| f.call(i,j)}})
@@ -453,7 +429,6 @@ class Matrix
   def cols_len
     (0...column_size).collect {|j| max_len_column(j)}
   end
-
   alias :to_s_old :to_s
 
   #
@@ -499,14 +474,17 @@ class Matrix
       self[row,column].send(op,other[row,column])
     end
   end
+
   # Element wise multiplication
   def e_mult(other)
     elementwise_operation(:*,other)
   end
+
   # Element wise multiplication
   def e_quo(other)
     elementwise_operation(:quo,other)
   end
+
   # Matrix sum of squares
   def mssq
     @rows.inject(0){|ac,row| ac+(row.inject(0) {|acr,i| acr+(i**2)})}
@@ -553,8 +531,7 @@ class Matrix
   # :section: Advanced methods
   #
   
-  #
-  # a hided module of Matrix
+  # a hidden module of Matrix
   module MMatrix
     def self.default_block(block)
       block ? lambda { |i| block.call(i) } : lambda {|i| i }
@@ -565,7 +542,6 @@ class Matrix
     # 1) the index of row/column and
     # 2) the values Vector for changing the row/column and
     # 3) the range of changes
-    #
     def self.id_vect_range(args, l)
       i = args[0] # the column(/the row) to be change
       vect = args[1] # the values vector
@@ -583,7 +559,6 @@ class Matrix
   #
   # Returns an array with the elements collected from the row "i".
   # When a block is given, the elements of that vector are iterated.
-  #
   def row_collect(i, &block)
     f = MMatrix.default_block(block)
     @rows[i].collect {|e| f.call(e)}
@@ -592,7 +567,6 @@ class Matrix
   #
   # Returns row vector number "i" like Matrix.row as a Vector.
   # When the block is given, the elements of row "i" are modified
-  #
   def row!(i)
     if block_given?
       @rows[i].collect! {|e| yield e }
@@ -605,176 +579,171 @@ class Matrix
   #
   # Returns an array with the elements collected from the column "j".
   # When a block is given, the elements of that vector are iterated.
-  #
   def column_collect(j, &block)
     f = MMatrix.default_block(block)
     (0...row_size).collect {|r| f.call(self[r, j])}
   end
 
-#
-# Returns column vector number "j" as a Vector.
-# When the block is given, the elements of column "j" are mmodified
-#
-def column!(j)
-  if block_given?
-    (0...row_size).collect { |i| @rows[i][j] = yield @rows[i][j] }
-  else
-    column(j)
-  end
-end
-alias :column_collect! :column!
-
-#
-# Set a certain column with the values of a Vector
-# m = Matrix.build(3, 3){|i, j| i * 3 + j + 1}
-# m.column= 1, Vector[1, 1, 1], 1..2
-# m => 1 2 3
-#      4 1 6
-#      7 1 9
-#
-def column=(args)
-  m = row_size
-  c, v, r = MMatrix.id_vect_range(args, m)
-  (m..r.begin - 1).each{|i| self[i, c] = 0}
-  [v.size, r.entries.size].min.times{|i| self[i + r.begin, c] = v[i]}
-  ((v.size + r.begin)..r.entries.last).each {|i| self[i, c] = 0}
-end
-
-#
-# Set a certain row with the values of a Vector
-# m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
-# m.row= 0, Vector[0, 0], 1..2
-# m => 1 0 0
-#      4 5 6
-#      7 8 9
-#
-def row=(args)
-  i, val, range = MMatrix.id_vect_range(args, column_size)
-  row!(i)[range] = val
-end
-
-def norm(p = 2)
-  Vector::Norm.sqnorm(self, p) ** (1.quo(p))
-end
-
-def norm_frobenius
-  norm
-end
-alias :normF :norm_frobenius
-
-#
-# Tests if the matrix is empty or not
-#
-def empty?
-  @rows.empty? if @rows
-end
-
-#
-# Returns row(s) of matrix as a Matrix
-#
-
-def row2matrix(r)
-  if r.is_a? Range
-    a=r.map {|v| v<row_size ? row(v).to_a : nil }.find_all {|v| !v.nil?}
-  else
-    a = row(r).to_a
-  end
-  if r.is_a?(Range) and r.entries.size > 1
-    return Matrix[*a]
-  else
-    return Matrix[a]
-  end
-end
-
-#
-# Returns the column/s of matrix as a Matrix
-#
-def column2matrix(c)
-  if c.is_a?(Range)
-    a=c.map {|v| column(v).to_a}.find_all {|v| v.size>0}
-  else
-    a = column(c).to_a
-  end
-  if c.is_a?(Range)
-    return Matrix.columns(a)
-  else
-    return Matrix[*a.collect{|x| [x]}]
-  end
-end
-
-# Returns the marginal of rows
-def row_sum
-  (0...row_size).collect {|i|
-    row(i).sum
-  }
-end
-# Returns  the marginal of columns
-def column_sum
-  (0...column_size).collect {|i|
-    column(i).sum
-  }
-end
-# Calculate sum of cells
-def total_sum
-  row_sum.inject(&:+)
-end
-
-module LU
   #
-  #	Return the Gauss vector, MC, Golub, 3.2.1 Gauss Transformation, p94
+  # Returns column vector number "j" as a Vector.
+  # When the block is given, the elements of column "j" are mmodified
   #
-  def self.gauss_vector(mat, k)
-    t = mat.column2matrix(k)
-    tk = t[k, 0]
-    (0..k).each{|i| t[i, 0] = 0}
-    return t if tk == 0
-    (k+1...mat.row_size).each{|i| t[i, 0] = t[i, 0].to_f / tk}
-    t
+  def column!(j)
+    if block_given?
+      (0...row_size).collect { |i| @rows[i][j] = yield @rows[i][j] }
+    else
+      column(j)
+    end
+  end
+  alias :column_collect! :column!
+
+  #
+  # Set a certain column with the values of a Vector
+  # m = Matrix.build(3, 3){|i, j| i * 3 + j + 1}
+  # m.column= 1, Vector[1, 1, 1], 1..2
+  # m => 1 2 3
+  #      4 1 6
+  #      7 1 9
+  #
+  def column=(args)
+    m = row_size
+    c, v, r = MMatrix.id_vect_range(args, m)
+    (m..r.begin - 1).each{|i| self[i, c] = 0}
+    [v.size, r.entries.size].min.times{|i| self[i + r.begin, c] = v[i]}
+    ((v.size + r.begin)..r.entries.last).each {|i| self[i, c] = 0}
   end
 
   #
-  # Return the Gauss transformation matrix: M_k = I - tau * e_k^T
+  # Set a certain row with the values of a Vector
+  # m = Matrix.new(3, 3){|i, j| i * 3 + j + 1}
+  # m.row= 0, Vector[0, 0], 1..2
+  # m => 1 0 0
+  #      4 5 6
+  #      7 8 9
   #
-  def self.gauss(mat, k)
-    i = Matrix.I(mat.column_size)
-    tau = gauss_vector(mat, k)
-    e = i.row2matrix(k)
-    i - tau * e
+  def row=(args)
+    i, val, range = MMatrix.id_vect_range(args, column_size)
+    row!(i)[range] = val
+  end
+
+  def norm(p = 2)
+    Vector::Norm.sqnorm(self, p) ** (1.quo(p))
+  end
+
+  def norm_frobenius
+    norm
+  end
+  alias :normF :norm_frobenius
+
+  #
+  # Tests if the matrix is empty or not
+  #
+  def empty?
+    @rows.empty? if @rows
   end
 
   #
-  # LU factorization: A = LU
-  # where L is lower triangular and U is upper triangular
+  # Returns row(s) of matrix as a Matrix
   #
-  def self.factorization(mat)
-    u = mat.clone
-    n = u.column_size
-    i = Matrix.I(n)
-    l = i.clone
-    (n-1).times {|k|
-      mk = gauss(u, k)
-      u = mk * u	# M_{n-1} * ... * M_1 * A = U
-      l += i - mk	# L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
+
+  def row2matrix(r)
+    if r.is_a? Range
+      a=r.map {|v| v<row_size ? row(v).to_a : nil }.find_all {|v| !v.nil?}
+    else
+      a = row(r).to_a
+    end
+    if r.is_a?(Range) and r.entries.size > 1
+      return Matrix[*a]
+    else
+      return Matrix[a]
+    end
+  end
+
+  #
+  # Returns the column/s of matrix as a Matrix
+  #
+  def column2matrix(c)
+    if c.is_a?(Range)
+      a=c.map {|v| column(v).to_a}.find_all {|v| v.size>0}
+    else
+      a = column(c).to_a
+    end
+    if c.is_a?(Range)
+      return Matrix.columns(a)
+    else
+      return Matrix[*a.collect{|x| [x]}]
+    end
+  end
+
+  # Returns the marginal of rows
+  def row_sum
+    (0...row_size).collect {|i|
+      row(i).sum
     }
-    return l, u
   end
-end
+  # Returns  the marginal of columns
+  def column_sum
+    (0...column_size).collect {|i|
+      column(i).sum
+    }
+  end
+  # Calculate sum of cells
+  def total_sum
+    row_sum.inject(&:+)
+  end
 
-#
-# Return the upper triangular matrix of LU factorization
-# M_{n-1} * ... * M_1 * A = U
-#
-def U
-  LU.factorization(self)[1]
-end
+  module LU
+    #
+    #	Return the Gauss vector, MC, Golub, 3.2.1 Gauss Transformation, p94
+    #
+    def self.gauss_vector(mat, k)
+      t = mat.column2matrix(k)
+      tk = t[k, 0]
+      (0..k).each{|i| t[i, 0] = 0}
+      return t if tk == 0
+      (k+1...mat.row_size).each{|i| t[i, 0] = t[i, 0].to_f / tk}
+      t
+    end
 
-#
-# Return the lower triangular matrix of LU factorization
-# L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
-#
-def L
-  LU.factorization(self)[0]
-end
+    #
+    # Return the Gauss transformation matrix: M_k = I - tau * e_k^T
+    def self.gauss(mat, k)
+      i = Matrix.I(mat.column_size)
+      tau = gauss_vector(mat, k)
+      e = i.row2matrix(k)
+      i - tau * e
+    end
+
+    #
+    # LU factorization: A = LU
+    # where L is lower triangular and U is upper triangular
+    def self.factorization(mat)
+      u = mat.clone
+      n = u.column_size
+      i = Matrix.I(n)
+      l = i.clone
+      (n-1).times {|k|
+        mk = gauss(u, k)
+        u = mk * u	# M_{n-1} * ... * M_1 * A = U
+        l += i - mk	# L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
+      }
+      return l, u
+    end
+  end
+
+  #
+  # Return the upper triangular matrix of LU factorization
+  # M_{n-1} * ... * M_1 * A = U
+  def U
+    LU.factorization(self)[1]
+  end
+
+  #
+  # Return the lower triangular matrix of LU factorization
+  # L = M_1^{-1} * ... * M_{n-1}^{-1} = I + sum_{k=1}^{n-1} tau * e
+  def L
+    LU.factorization(self)[0]
+  end
 
   module Householder
     #
@@ -1089,8 +1058,12 @@ end
     #
     def self.J(p, q, c, s, n)
       j = Matrix.I(n)
-      j[p,p] = c; j[p, q] = s
-      j[q,p] = -s; j[q, q] = c
+
+      j[p,p] = c 
+      j[p,q] = s
+      j[q,p] = -s 
+      j[q,q] = c
+
       j
     end
   end
@@ -1139,5 +1112,3 @@ end
     cJacobi(tol)[1]
   end
 end
-
-

@@ -1,9 +1,0 @@
-History.txt
-LICENSE.txt
-Manifest.txt
-ORIGINAL_README.txt
-README.txt
-Rakefile
-lib/extendmatrix.rb
-spec/extendmatrix_spec.rb
-spec/spec.opts
